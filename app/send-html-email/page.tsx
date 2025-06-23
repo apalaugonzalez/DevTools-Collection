@@ -12,6 +12,10 @@ interface Flash {
 export default function EmailSender() {
   const [templates, setTemplates] = useState<string[]>([]);
   const [to, setTo] = useState("");
+  // ADDED: State for CC, BCC, and sending mode
+  const [cc, setCc] = useState("");
+  const [bcc, setBcc] = useState("");
+  const [sendAsSingleEmail, setSendAsSingleEmail] = useState(false);
   const [subject, setSubject] = useState("");
   const [template, setTemplate] = useState("");
   const [htmlContent, setHtmlContent] = useState("");
@@ -133,7 +137,16 @@ export default function EmailSender() {
     setFlash(null);
 
     try {
-      const payload = { to, subject, template, message: htmlContent };
+      // MODIFIED: Payload now includes cc, bcc, and the sending mode flag
+      const payload = {
+        to,
+        cc,
+        bcc,
+        subject,
+        template,
+        message: htmlContent,
+        sendAsSingleEmail,
+      };
       const res = await fetch("/api/send-html-email", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -145,10 +158,14 @@ export default function EmailSender() {
           type: "success",
           message: "Emails sent successfully!",
         });
+        // MODIFIED: Reset all form fields including new ones
         setTo("");
+        setCc("");
+        setBcc("");
         setSubject("");
         setTemplate("");
         setHtmlContent("");
+        setSendAsSingleEmail(false);
       } else {
         const errMsg = data.error || "Send failed";
         throw new Error(errMsg);
@@ -258,24 +275,87 @@ export default function EmailSender() {
             </h2>
 
             <form onSubmit={sendEmail} className="space-y-6">
-              {/* Recipients */}
+              {/* MODIFIED: 'To' field label and helper text are now conditional */}
               <div className="space-y-2">
                 <label className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-2">
                   <span>👥</span>
-                  Recipients *
+                  {sendAsSingleEmail
+                    ? "Primary Recipient (To) *"
+                    : "Recipients *"}
                 </label>
                 <input
                   type="text"
                   value={to}
                   onChange={(e) => setTo(e.target.value)}
-                  placeholder="john@example.com, maria@example.com"
+                  placeholder={
+                    sendAsSingleEmail
+                      ? "john@example.com"
+                      : "john@example.com, maria@example.com"
+                  }
                   className="w-full p-3 lg:p-4 border border-gray-200 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-slate-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                   required
                 />
                 <p className="text-xs text-gray-500 dark:text-gray-400">
-                  Separate multiple emails with commas
+                  {sendAsSingleEmail
+                    ? "Enter one primary recipient. Use CC/BCC for others."
+                    : "Separate multiple emails with commas."}
                 </p>
               </div>
+
+              {/* ADDED: Checkbox to switch sending mode */}
+              <div className="flex items-center space-x-3">
+                <input
+                  type="checkbox"
+                  id="sendAsSingleEmail"
+                  checked={sendAsSingleEmail}
+                  onChange={(e) => setSendAsSingleEmail(e.target.checked)}
+                  className="h-4 w-4 rounded border-gray-300 dark:border-gray-600 text-blue-600 focus:ring-blue-500 bg-white dark:bg-slate-700"
+                />
+                <label
+                  htmlFor="sendAsSingleEmail"
+                  className="text-sm font-medium text-gray-700 dark:text-gray-300 cursor-pointer select-none"
+                >
+                  Send as a single email (use CC/BCC)
+                </label>
+              </div>
+
+              {/* ADDED: Conditional CC and BCC fields */}
+              {sendAsSingleEmail && (
+                <div className="space-y-6">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-2">
+                      <span>👤</span>
+                      CC
+                    </label>
+                    <input
+                      type="text"
+                      value={cc}
+                      onChange={(e) => setCc(e.target.value)}
+                      placeholder="maria@example.com, other@example.com"
+                      className="w-full p-3 lg:p-4 border border-gray-200 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-slate-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                    />
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                      Separate multiple emails with commas.
+                    </p>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-2">
+                      <span>🤫</span>
+                      BCC
+                    </label>
+                    <input
+                      type="text"
+                      value={bcc}
+                      onChange={(e) => setBcc(e.target.value)}
+                      placeholder="secret@example.com"
+                      className="w-full p-3 lg:p-4 border border-gray-200 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-slate-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                    />
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                      Separate multiple emails with commas.
+                    </p>
+                  </div>
+                </div>
+              )}
 
               {/* Subject */}
               <div className="space-y-2">

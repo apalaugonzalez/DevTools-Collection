@@ -23,16 +23,16 @@ export async function POST(request: Request) {
       { status: 400 }
     )
   }
+  
+  // MODIFIED: Destructure new fields from the payload
   const payload = body as Record<string, unknown>
-  const toVal = payload.to
-  const subjectVal = payload.subject
-  const templateVal = payload.template
-  const messageVal = payload.message
+  const { to, cc, bcc, subject, template, message, sendAsSingleEmail } = payload;
+
 
   if (
-    typeof toVal !== 'string' ||
-    typeof subjectVal !== 'string' ||
-    typeof templateVal !== 'string'
+    typeof to !== 'string' ||
+    typeof subject !== 'string' ||
+    typeof template !== 'string'
   ) {
     return NextResponse.json(
       { error: 'Missing or invalid fields: to, subject, template' },
@@ -40,20 +40,21 @@ export async function POST(request: Request) {
     )
   }
 
-  const to = toVal.trim()
-  const subject = subjectVal.trim()
-  const template = templateVal.trim()
-
   // 3) Load template file (fallback to message body)
-  let htmlBody = typeof messageVal === 'string' ? messageVal : ''
-  try {
-    htmlBody = await fs.readFile(
-      path.join(process.cwd(), 'emails', `${template}.html`),
-      'utf8'
-    )
-  } catch {
-    // Use provided message if template file doesn't exist
+  let htmlBody = typeof message === 'string' ? message : ''
+  // Use provided message if template is 'blank' or file doesn't exist
+  if (template && template !== 'blank') {
+    try {
+      htmlBody = await fs.readFile(
+        path.join(process.cwd(), 'emails', `${template}.html`),
+        'utf8'
+      )
+    } catch {
+        // Fallback to the message content if template fails to load
+        console.warn(`Template "${template}" not found. Falling back to provided HTML content.`);
+    }
   }
+
 
   // 4) Handle environment variables with fallback for cache issue
   const smtpConfig = {
@@ -76,28 +77,46 @@ export async function POST(request: Request) {
     },
   })
 
-  // 6) Send emails
-  const recipients = to
-    .split(',')
-    .map(s => s.trim())
-    .filter(Boolean)
-
+  // 6) Send emails based on the chosen mode
   try {
-    for (const addr of recipients) {
+    if (sendAsSingleEmail) {
+      // --- NEW LOGIC: Send one email with To, CC, and BCC ---
+      console.log('Sending as a single email with CC/BCC.');
       await transporter.sendMail({
         from: smtpConfig.from,
-        to: addr,
+        to: to.trim(),
+        cc: typeof cc === 'string' ? cc.trim() : '',
+        bcc: typeof bcc === 'string' ? bcc.trim() : '',
         subject,
         html: htmlBody,
-      })
+      });
+
+    } else {
+      // --- EXISTING LOGIC: Send separate emails to each recipient ---
+      console.log('Sending as separate emails.');
+      const recipients = to
+        .split(',')
+        .map(s => s.trim())
+        .filter(Boolean);
+        
+      for (const addr of recipients) {
+        await transporter.sendMail({
+          from: smtpConfig.from,
+          to: addr,
+          subject,
+          html: htmlBody,
+        });
+      }
     }
-    return NextResponse.json({ ok: true })
+    
+    return NextResponse.json({ ok: true });
+
   } catch (err) {
-    console.error('[send-email] Error:', err)
-    const msg = err instanceof Error ? err.message : String(err)
+    console.error('[send-email] Error:', err);
+    const msg = err instanceof Error ? err.message : String(err);
     return NextResponse.json(
       { error: 'Failed to send emails', details: msg },
       { status: 500 }
-    )
+    );
   }
 }
