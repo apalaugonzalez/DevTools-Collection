@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useEffect, useRef, FormEvent } from "react";
+import Link from "next/link";
+import { Home as HomeIcon, ChevronRight } from "lucide-react";
 
 interface Flash {
   type: "success" | "error" | "info";
@@ -41,7 +43,7 @@ export default function EmailSender() {
       document.removeEventListener("fullscreenchange", handleFullscreenChange);
   }, []);
 
-  // FIX: This effect scales the preview to fit its container width, preventing horizontal scroll
+  // Scales the preview to fit its container width
   useEffect(() => {
     const container = previewContainerRef.current;
     const preview = previewRef.current;
@@ -56,16 +58,13 @@ export default function EmailSender() {
       const contentWidth = preview.scrollWidth;
 
       if (contentWidth > 0 && containerWidth > 0) {
-        // We only scale down. If content is smaller than container, scale is 1.
         setPreviewScale(Math.min(1, containerWidth / contentWidth));
       }
     });
 
-    // Recalculate when container or content resizes
     observer.observe(container);
     observer.observe(preview);
 
-    // Initial calculation after content is rendered
     setTimeout(() => {
       const containerWidth = container.clientWidth;
       const contentWidth = preview.scrollWidth;
@@ -164,7 +163,6 @@ export default function EmailSender() {
 
   // Toggle fullscreen
   const toggleFullscreen = () => {
-    // Note: Fullscreen is on the whole preview section, not just the container
     const fullscreenTarget = document.querySelector("#preview-section");
     if (!document.fullscreenElement) {
       fullscreenTarget?.requestFullscreen();
@@ -175,7 +173,33 @@ export default function EmailSender() {
 
   return (
     <div className="w-full min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 dark:from-slate-900 dark:to-slate-800">
-      <div className="container mx-auto px-4 pt-24 pb-8 max-w-7xl">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-12 max-w-7xl">
+        {/* Breadcrumbs Navigation */}
+        <nav className="mb-8" aria-label="Breadcrumb">
+          <ol className="flex items-center space-x-2 text-sm">
+            <li>
+              <Link
+                href="/"
+                className="flex items-center text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors"
+              >
+                <HomeIcon className="h-4 w-4 mr-1.5 flex-shrink-0" />
+                Home
+              </Link>
+            </li>
+            <li>
+              <ChevronRight className="h-4 w-4 text-slate-400 dark:text-slate-500" />
+            </li>
+            <li>
+              <span
+                className="font-medium text-slate-700 dark:text-slate-200"
+                aria-current="page"
+              >
+                Send HTML Email
+              </span>
+            </li>
+          </ol>
+        </nav>
+
         {/* Header */}
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-4">
@@ -414,7 +438,6 @@ export default function EmailSender() {
                   transformOrigin: "top left",
                   width: `${(1 / previewScale) * 100}%`,
                   height: `${(1 / previewScale) * 100}%`,
-                  // Hide the scaled-up scrollbar
                   scrollbarWidth: "none",
                 }}
               />
