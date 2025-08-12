@@ -4,8 +4,51 @@
     <meta charset="UTF-8" />
     <title>Tu Página Web de Concesionario Está Lista</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- Dark Mode Meta Tags -->
+    <meta name="color-scheme" content="light dark" />
+    <meta name="supported-color-schemes" content="light dark" />
+    <style>
+      /* Tells email clients how to handle dark mode */
+      :root {
+        color-scheme: light dark;
+        supported-color-schemes: light dark;
+      }
+      @media (prefers-color-scheme: dark) {
+        .body-bg {
+          background-color: #f1f5f9 !important;
+        }
+        .card-bg {
+          background-color: #ffffff !important;
+        }
+        .features-bg {
+          background-color: #f9fafb !important;
+        }
+        .contact-bg {
+          background-color: #1e293b !important;
+        }
+        .main-text, .header-text {
+          color: #111827 !important;
+        }
+        .muted-text {
+          color: #374151 !important;
+        }
+        .subtle-text {
+          color: #6b7280 !important;
+        }
+        .contact-header, .contact-info-text {
+           color: #ffffff !important;
+        }
+        .contact-name {
+            color: #f87171 !important;
+        }
+        .contact-link {
+            color: #fca5a5 !important;
+        }
+      }
+    </style>
   </head>
   <body
+    class="body-bg"
     style="
       margin: 0;
       padding: 0;
@@ -19,6 +62,7 @@
       width="100%"
       cellpadding="0"
       cellspacing="0"
+      class="body-bg"
       style="background: #f1f5f9; padding: 20px"
     >
       <tr>
@@ -27,6 +71,7 @@
             width="600"
             cellpadding="0"
             cellspacing="0"
+            class="card-bg"
             style="
               background: #ffffff;
               border-radius: 12px;
@@ -50,7 +95,7 @@
             <!-- Header -->
             <tr>
               <td style="padding: 40px 30px 20px 30px; text-align: center">
-                <h1 style="font-size: 24px; color: #111827; margin: 0">
+                <h1 class="header-text" style="font-size: 24px; color: #111827; margin: 0">
                   Una Página Web Profesional para tu Concesionario, Lista para
                   Lanzar
                 </h1>
@@ -69,10 +114,10 @@
             <!-- Greeting -->
             <tr>
               <td style="padding: 0 30px">
-                <p style="font-size: 16px; margin: 0 0 20px 0">
+                <p class="main-text" style="font-size: 16px; margin: 0 0 20px 0; color: #111827;">
                   ¡Hola Concesionario! 👋
                 </p>
-                <p style="font-size: 16px; margin: 0 0 20px 0">
+                <p class="main-text" style="font-size: 16px; margin: 0 0 20px 0; color: #111827;">
                   Soy <strong>Alejandro</strong>, desarrollador web en Miami. He
                   creado un sitio web moderno y eficaz diseñado especialmente
                   para concesionarios de autos — enfocado en mostrar tu
@@ -83,53 +128,61 @@
 
             <!-- Features -->
             <tr>
-              <td
-                style="
-                  padding: 30px;
-                  background: #f9fafb;
-                  border-radius: 8px;
-                  margin: 20px;
-                "
-              >
-                <h3 style="font-size: 18px; color: #111827; margin-top: 0">
-                  🚗 ¿Por qué les encanta a los concesionarios?
-                </h3>
-                <ul style="padding-left: 20px; color: #374151; margin: 0">
-                  <li>
-                    <strong>Inventario dinámico</strong> con filtros, precios e
-                    imágenes
-                  </li>
-                  <li>
-                    <strong>Diseño responsive</strong> que se adapta a todos los
-                    dispositivos
-                  </li>
-                  <li>
-                    <strong>Formulario de contacto limpio</strong> para generar
-                    clientes potenciales rápidamente
-                  </li>
-                  <li>
-                    <strong>Formulario de crédito</strong> seguro para
-                    aplicaciones en línea
-                  </li>
-                  <li>
-                    <strong>SEO optimizado</strong> para búsquedas locales en
-                    Google
-                  </li>
-                  <li>
-                    <strong>Marca personalizada</strong> con tu logo, colores y
-                    datos del vehículo
-                  </li>
-                  <li>
-                    <strong>Listo para lanzar</strong> — personalizado y en
-                    línea en solo 48 horas
-                  </li>
-                </ul>
+              <td style="padding: 0 30px 20px 30px;">
+                <table
+                  width="100%"
+                  cellpadding="20"
+                  cellspacing="0"
+                  class="features-bg"
+                  style="
+                    background: #f9fafb;
+                    border-radius: 8px;
+                  "
+                >
+                  <tr>
+                    <td>
+                      <h3 class="header-text" style="font-size: 18px; color: #111827; margin-top: 0">
+                        🚗 ¿Por qué les encanta a los concesionarios?
+                      </h3>
+                      <ul class="muted-text" style="padding-left: 20px; color: #374151; margin: 0">
+                        <li>
+                          <strong>Inventario dinámico</strong> con filtros, precios e
+                          imágenes
+                        </li>
+                        <li>
+                          <strong>Diseño responsive</strong> que se adapta a todos los
+                          dispositivos
+                        </li>
+                        <li>
+                          <strong>Formulario de contacto limpio</strong> para generar
+                          clientes potenciales rápidamente
+                        </li>
+                        <li>
+                          <strong>Formulario de crédito</strong> seguro para
+                          aplicaciones en línea
+                        </li>
+                        <li>
+                          <strong>SEO optimizado</strong> para búsquedas locales en
+                          Google
+                        </li>
+                        <li>
+                          <strong>Marca personalizada</strong> con tu logo, colores y
+                          datos del vehículo
+                        </li>
+                        <li>
+                          <strong>Listo para lanzar</strong> — personalizado y en
+                          línea en solo 48 horas
+                        </li>
+                      </ul>
+                    </td>
+                  </tr>
+                </table>
               </td>
             </tr>
 
             <!-- Call to Action -->
             <tr>
-              <td align="center" style="padding: 40px 30px 20px 30px">
+              <td align="center" style="padding: 20px 30px 20px 30px">
                 <a
                   href="https://dealer-mock.vercel.app/"
                   target="_blank"
@@ -146,7 +199,7 @@
                 >
                   🚘 Ver Sitio de Demostración
                 </a>
-                <p style="margin-top: 12px; font-size: 13px; color: #6b7280">
+                <p class="subtle-text" style="margin-top: 12px; font-size: 13px; color: #6b7280">
                   🔎
                   <em
                     >Este es un sitio de demostración con fines ilustrativos. Tu
@@ -159,12 +212,12 @@
             <!-- Follow-up Text -->
             <tr>
               <td style="padding: 0 30px 20px 30px">
-                <p style="font-size: 16px; margin: 0 0 20px 0">
+                <p class="main-text" style="font-size: 16px; margin: 0 0 20px 0; color: #111827;">
                   No es solo un diseño — es una plataforma completa lista para
                   mostrar tu inventario y captar más clientes. Personalizo cada
                   detalle y la lanzo en <strong>solo 48 horas</strong>.
                 </p>
-                <p style="font-size: 16px; margin: 0">
+                <p class="main-text" style="font-size: 16px; margin: 0; color: #111827;">
                   ¿Listo para mejorar tu presencia online y generar más ventas?
                   ¡Hablemos!
                 </p>
@@ -174,6 +227,7 @@
             <!-- Contact Info -->
             <tr>
               <td
+                class="contact-bg"
                 style="
                   padding: 30px;
                   background: #1e293b;
@@ -181,31 +235,34 @@
                   text-align: center;
                 "
               >
-                <h3 style="margin: 0 0 12px 0">
+                <h3 class="contact-header" style="margin: 0 0 12px 0; color: #ffffff;">
                   Lancemos Tu Sitio de Concesionario
                 </h3>
-                <p style="margin: 0; font-size: 16px; color: #f87171">
+                <p class="contact-name" style="margin: 0; font-size: 16px; color: #f87171">
                   <strong>Alejandro Palau</strong>
                 </p>
-                <p style="margin: 0 0 10px 0; font-size: 14px">
+                <p class="contact-info-text" style="margin: 0 0 10px 0; font-size: 14px; color: #ffffff;">
                   Desarrollador Web Profesional • Miami, FL
                 </p>
                 <p style="margin: 0; font-size: 14px; line-height: 1.8">
                   📧
                   <a
                     href="mailto:admin@apalaugonzalez.com"
+                    class="contact-link"
                     style="color: #fca5a5; text-decoration: none"
                     >admin@apalaugonzalez.com</a
                   ><br />
                   📱
                   <a
                     href="tel:+17862101334"
+                    class="contact-link"
                     style="color: #fca5a5; text-decoration: none"
                     >(786) 210-1334</a
                   ><br />
                   💬
                   <a
                     href="https://wa.me/17862101334"
+                    class="contact-link"
                     style="color: #fca5a5; text-decoration: none"
                     target="_blank"
                     >Escríbeme por WhatsApp</a
@@ -221,15 +278,16 @@
                   padding: 20px;
                   text-align: center;
                   font-size: 13px;
-                  color: #6b7280;
                 "
               >
-                Pongamos tu concesionario en línea y funcionando en solo 48
-                horas.<br />
-                <em style="display: block; margin-top: 8px"
-                  >Este sitio es solo una demostración y no está afiliado a
-                  ningún concesionario real.</em
-                >
+                <p class="subtle-text" style="color: #6b7280; margin: 0;">
+                  Pongamos tu concesionario en línea y funcionando en solo 48
+                  horas.<br />
+                  <em style="display: block; margin-top: 8px"
+                    >Este sitio es solo una demostración y no está afiliado a
+                    ningún concesionario real.</em
+                  >
+                </p>
               </td>
             </tr>
           </table>

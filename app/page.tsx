@@ -2,7 +2,15 @@
 "use client";
 
 // Import the necessary icons from lucide-react
-import { ArrowRight, Mail, Search, Layers } from "lucide-react";
+import {
+  ArrowRight,
+  Mail,
+  Search,
+  Layers,
+  Globe,
+  ScanLine,
+} from "lucide-react";
+import Link from "next/link";
 
 export default function Home() {
   return (
@@ -32,12 +40,12 @@ export default function Home() {
             <p className="text-slate-500 dark:text-slate-400 mb-6">
               Discover email addresses associated with a specific domain name.
             </p>
-            <a
+            <Link
               href="/email-finder-by-domain"
               className="inline-flex items-center justify-center px-6 py-3 font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
             >
               Open Tool <ArrowRight className="ml-2 h-5 w-5" />
-            </a>
+            </Link>
           </div>
 
           {/* Send HTML Email Card */}
@@ -51,18 +59,17 @@ export default function Home() {
             <p className="text-slate-500 dark:text-slate-400 mb-6">
               Compose and send HTML emails directly from your browser.
             </p>
-            <a
+            <Link
               href="/send-html-email"
               className="inline-flex items-center justify-center px-6 py-3 font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
             >
               Open Tool <ArrowRight className="ml-2 h-5 w-5" />
-            </a>
+            </Link>
           </div>
 
-          {/* CMS Detector Card (New) */}
+          {/* CMS Detector Card */}
           <div className="bg-white dark:bg-slate-800/50 backdrop-blur-sm rounded-xl shadow-lg border border-slate-200 dark:border-slate-700 p-8 transform hover:scale-105 transition-transform duration-300">
             <div className="flex items-center justify-center h-16 w-16 rounded-full bg-indigo-100 dark:bg-indigo-900/50 mb-6 mx-auto">
-              {/* Using 'Layers' icon for CMS/tech stack detection */}
               <Layers className="h-8 w-8 text-indigo-600 dark:text-indigo-400" />
             </div>
             <h2 className="text-2xl font-semibold text-slate-800 dark:text-white mb-3">
@@ -71,12 +78,50 @@ export default function Home() {
             <p className="text-slate-500 dark:text-slate-400 mb-6">
               Identify the Content Management System of any website.
             </p>
-            <a
-              href="/what-cms" // This link should point to your tool's page
+            <Link
+              href="/what-cms"
               className="inline-flex items-center justify-center px-6 py-3 font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
             >
               Open Tool <ArrowRight className="ml-2 h-5 w-5" />
-            </a>
+            </Link>
+          </div>
+
+          {/* What Is My IP Card */}
+          <div className="bg-white dark:bg-slate-800/50 backdrop-blur-sm rounded-xl shadow-lg border border-slate-200 dark:border-slate-700 p-8 transform hover:scale-105 transition-transform duration-300">
+            <div className="flex items-center justify-center h-16 w-16 rounded-full bg-indigo-100 dark:bg-indigo-900/50 mb-6 mx-auto">
+              <Globe className="h-8 w-8 text-indigo-600 dark:text-indigo-400" />
+            </div>
+            <h2 className="text-2xl font-semibold text-slate-800 dark:text-white mb-3">
+              What Is My IP?
+            </h2>
+            <p className="text-slate-500 dark:text-slate-400 mb-6">
+              Quickly find and copy your public IP address.
+            </p>
+            <Link
+              href="/what-is-my-ip"
+              className="inline-flex items-center justify-center px-6 py-3 font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
+            >
+              Open Tool <ArrowRight className="ml-2 h-5 w-5" />
+            </Link>
+          </div>
+
+          {/* Port Scanner Card (New) */}
+          <div className="bg-white dark:bg-slate-800/50 backdrop-blur-sm rounded-xl shadow-lg border border-slate-200 dark:border-slate-700 p-8 transform hover:scale-105 transition-transform duration-300">
+            <div className="flex items-center justify-center h-16 w-16 rounded-full bg-indigo-100 dark:bg-indigo-900/50 mb-6 mx-auto">
+              <ScanLine className="h-8 w-8 text-indigo-600 dark:text-indigo-400" />
+            </div>
+            <h2 className="text-2xl font-semibold text-slate-800 dark:text-white mb-3">
+              Port Scanner
+            </h2>
+            <p className="text-slate-500 dark:text-slate-400 mb-6">
+              Check for open ports on a specific host or IP address.
+            </p>
+            <Link
+              href="/find-open-ports"
+              className="inline-flex items-center justify-center px-6 py-3 font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
+            >
+              Open Tool <ArrowRight className="ml-2 h-5 w-5" />
+            </Link>
           </div>
         </div>
       </div>

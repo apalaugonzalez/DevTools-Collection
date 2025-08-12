@@ -12,7 +12,6 @@ interface Flash {
 export default function EmailSender() {
   const [templates, setTemplates] = useState<string[]>([]);
   const [to, setTo] = useState("");
-  // ADDED: State for CC, BCC, and sending mode
   const [cc, setCc] = useState("");
   const [bcc, setBcc] = useState("");
   const [sendAsSingleEmail, setSendAsSingleEmail] = useState(false);
@@ -137,7 +136,6 @@ export default function EmailSender() {
     setFlash(null);
 
     try {
-      // MODIFIED: Payload now includes cc, bcc, and the sending mode flag
       const payload = {
         to,
         cc,
@@ -158,7 +156,6 @@ export default function EmailSender() {
           type: "success",
           message: "Emails sent successfully!",
         });
-        // MODIFIED: Reset all form fields including new ones
         setTo("");
         setCc("");
         setBcc("");
@@ -275,7 +272,7 @@ export default function EmailSender() {
             </h2>
 
             <form onSubmit={sendEmail} className="space-y-6">
-              {/* MODIFIED: 'To' field label and helper text are now conditional */}
+              {/* 'To' field */}
               <div className="space-y-2">
                 <label className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-2">
                   <span>👥</span>
@@ -302,7 +299,7 @@ export default function EmailSender() {
                 </p>
               </div>
 
-              {/* ADDED: Checkbox to switch sending mode */}
+              {/* Checkbox to switch sending mode */}
               <div className="flex items-center space-x-3">
                 <input
                   type="checkbox"
@@ -319,7 +316,7 @@ export default function EmailSender() {
                 </label>
               </div>
 
-              {/* ADDED: Conditional CC and BCC fields */}
+              {/* Conditional CC and BCC fields */}
               {sendAsSingleEmail && (
                 <div className="space-y-6">
                   <div className="space-y-2">
@@ -480,19 +477,19 @@ export default function EmailSender() {
             </form>
           </div>
 
-          {/* Preview Section */}
+          {/* === VERIFIED PREVIEW SECTION START === */}
           <div
             id="preview-section"
-            className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl p-6 lg:p-8 flex flex-col"
+            className="bg-white rounded-2xl shadow-xl p-6 lg:p-8 flex flex-col"
           >
             <div className="flex justify-between items-center mb-6">
-              <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
+              <h2 className="text-xl font-semibold text-gray-900 flex items-center gap-2">
                 <span>👁️</span>
                 Live Preview
               </h2>
               <button
                 onClick={toggleFullscreen}
-                className="p-2 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
                 title={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
               >
                 {isFullscreen ? (
@@ -503,10 +500,9 @@ export default function EmailSender() {
               </button>
             </div>
 
-            {/* Preview Container - Full Height */}
             <div
               ref={previewContainerRef}
-              className="border border-gray-200 dark:border-gray-600 rounded-xl overflow-auto bg-gray-50 dark:bg-slate-900 relative flex-1"
+              className="border border-gray-200 rounded-xl overflow-auto bg-gray-50 relative flex-1"
               style={{ minHeight: "600px" }}
             >
               <div
@@ -523,7 +519,7 @@ export default function EmailSender() {
               />
 
               {!htmlContent && (
-                <div className="absolute inset-0 flex flex-col items-center justify-center text-gray-400 dark:text-gray-500 p-4">
+                <div className="absolute inset-0 flex flex-col items-center justify-center text-gray-400 p-4">
                   <span className="text-6xl mb-4">📧</span>
                   <p className="text-base lg:text-lg font-medium text-center">
                     Your email preview will appear here
@@ -535,6 +531,7 @@ export default function EmailSender() {
               )}
             </div>
           </div>
+          {/* === VERIFIED PREVIEW SECTION END === */}
         </div>
       </div>
     </div>
