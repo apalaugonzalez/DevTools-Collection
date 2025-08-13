@@ -9,6 +9,8 @@ import {
   Layers,
   Globe,
   ScanLine,
+  Monitor,
+  Zap,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -105,7 +107,7 @@ export default function Home() {
             </Link>
           </div>
 
-          {/* Port Scanner Card (New) */}
+          {/* Port Scanner Card */}
           <div className="bg-white dark:bg-slate-800/50 backdrop-blur-sm rounded-xl shadow-lg border border-slate-200 dark:border-slate-700 p-8 transform hover:scale-105 transition-transform duration-300">
             <div className="flex items-center justify-center h-16 w-16 rounded-full bg-indigo-100 dark:bg-indigo-900/50 mb-6 mx-auto">
               <ScanLine className="h-8 w-8 text-indigo-600 dark:text-indigo-400" />
@@ -118,6 +120,46 @@ export default function Home() {
             </p>
             <Link
               href="/find-open-ports"
+              className="inline-flex items-center justify-center px-6 py-3 font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
+            >
+              Open Tool <ArrowRight className="ml-2 h-5 w-5" />
+            </Link>
+          </div>
+
+          {/* Website Tech Scanner Card */}
+          <div className="bg-white dark:bg-slate-800/50 backdrop-blur-sm rounded-xl shadow-lg border border-slate-200 dark:border-slate-700 p-8 transform hover:scale-105 transition-transform duration-300">
+            <div className="flex items-center justify-center h-16 w-16 rounded-full bg-indigo-100 dark:bg-indigo-900/50 mb-6 mx-auto">
+              <Monitor className="h-8 w-8 text-indigo-600 dark:text-indigo-400" />
+            </div>
+            <h2 className="text-2xl font-semibold text-slate-800 dark:text-white mb-3">
+              Website Tech Scanner
+            </h2>
+            <p className="text-slate-500 dark:text-slate-400 mb-6">
+              Analyze websites to detect technologies, frameworks, and tools
+              used.
+            </p>
+            <Link
+              href="/analyzer"
+              className="inline-flex items-center justify-center px-6 py-3 font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
+            >
+              Open Tool <ArrowRight className="ml-2 h-5 w-5" />
+            </Link>
+          </div>
+
+          {/* PageSpeed Insights Card (New) */}
+          <div className="bg-white dark:bg-slate-800/50 backdrop-blur-sm rounded-xl shadow-lg border border-slate-200 dark:border-slate-700 p-8 transform hover:scale-105 transition-transform duration-300">
+            <div className="flex items-center justify-center h-16 w-16 rounded-full bg-indigo-100 dark:bg-indigo-900/50 mb-6 mx-auto">
+              <Zap className="h-8 w-8 text-indigo-600 dark:text-indigo-400" />
+            </div>
+            <h2 className="text-2xl font-semibold text-slate-800 dark:text-white mb-3">
+              PageSpeed Insights
+            </h2>
+            <p className="text-slate-500 dark:text-slate-400 mb-6">
+              Analyze website performance, accessibility, and SEO metrics with
+              Google Lighthouse.
+            </p>
+            <Link
+              href="/pagespeed"
               className="inline-flex items-center justify-center px-6 py-3 font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
             >
               Open Tool <ArrowRight className="ml-2 h-5 w-5" />
