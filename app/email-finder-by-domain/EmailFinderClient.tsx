@@ -2,23 +2,23 @@
 
 import { useState, FormEvent, useEffect, useRef } from "react";
 
-// --- Sub-Components for better UX ---
+// --- Sub-Components for Terminal UX ---
 
 /**
- * A toast notification component for user feedback.
+ * Terminal-style toast notification
  */
-const Toast = ({ message }: { message: string }) => (
+const TerminalToast = ({ message }: { message: string }) => (
   <div className="fixed bottom-5 left-1/2 -translate-x-1/2 z-50 animate-toast-in">
-    <div className="bg-slate-800 text-white dark:bg-slate-200 dark:text-slate-800 text-sm font-semibold py-2 px-4 rounded-full shadow-lg">
-      {message}
+    <div className="bg-black border border-green-500 text-green-400 font-mono text-sm py-2 px-4 shadow-lg shadow-green-500/20">
+      <span className="text-green-500">$</span> {message}
     </div>
   </div>
 );
 
 /**
- * Represents a single email result with animations.
+ * Terminal-style email result item
  */
-const ResultItem = ({
+const TerminalResultItem = ({
   email,
   onCopy,
   isCopied,
@@ -31,65 +31,60 @@ const ResultItem = ({
   isVisible: boolean;
   index: number;
 }) => (
-  <li
+  <div
     className={`transition-all duration-500 ${
       isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
     }`}
-    style={{ transitionDelay: `${index * 75}ms` }}
+    style={{ transitionDelay: `${index * 100}ms` }}
   >
-    <div className="group flex items-center justify-between bg-slate-100 dark:bg-slate-700/60 p-2.5 rounded-lg">
-      <span className="break-all font-mono text-sm text-slate-600 dark:text-slate-300">
-        {email}
-      </span>
+    <div className="group flex items-center justify-between hover:bg-gray-900/50 p-2 border-l-2 border-transparent hover:border-green-500 transition-all duration-200">
+      <div className="flex items-center space-x-2 flex-1">
+        <span className="text-green-500 font-mono text-sm">→</span>
+        <span className="font-mono text-sm text-green-400 break-all">
+          {email}
+        </span>
+      </div>
       <button
         onClick={() => onCopy(email)}
-        className="ml-4 p-1.5 rounded-full transition-all duration-200 hover:scale-110 hover:bg-slate-200 dark:hover:bg-slate-600/50"
+        className="ml-4 px-2 py-1 font-mono text-xs border border-gray-700 hover:border-green-500 hover:text-green-400 transition-all duration-200 bg-gray-900 hover:bg-gray-800"
         aria-label={`Copy email ${email}`}
       >
         {isCopied ? (
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="16"
-            height="16"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            className="text-green-500"
-          >
-            <path d="M20 6 9 17l-5-5"></path>
-          </svg>
+          <span className="text-green-400">✓ copied</span>
         ) : (
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="16"
-            height="16"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            className="opacity-50 group-hover:opacity-100 transition-opacity"
-          >
-            <rect width="14" height="14" x="8" y="8" rx="2" ry="2"></rect>
-            <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"></path>
-          </svg>
+          <span className="text-gray-400">copy</span>
         )}
       </button>
     </div>
-  </li>
+  </div>
 );
 
-// --- Main Component ---
-export default function EmailFinderClient() {
+/**
+ * Terminal loading animation
+ */
+const TerminalLoader = () => (
+  <div className="flex items-center space-x-1 text-green-400 font-mono text-sm">
+    <span>scanning</span>
+    <div className="flex space-x-1">
+      <span className="animate-pulse">.</span>
+      <span className="animate-pulse" style={{ animationDelay: "0.2s" }}>
+        .
+      </span>
+      <span className="animate-pulse" style={{ animationDelay: "0.4s" }}>
+        .
+      </span>
+    </div>
+  </div>
+);
+
+// --- Main Terminal Component ---
+export default function TerminalEmailFinder() {
   const [url, setUrl] = useState("");
   const [emails, setEmails] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [submittedUrl, setSubmittedUrl] = useState("");
+  const [commandHistory, setCommandHistory] = useState<string[]>([]);
 
   // State for copy feedback and animations
   const [copiedIdentifier, setCopiedIdentifier] = useState<string | null>(null);
@@ -97,20 +92,25 @@ export default function EmailFinderClient() {
   const [resultsVisible, setResultsVisible] = useState(false);
 
   const resultsRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     setError(null);
     setEmails([]);
-    setResultsVisible(false); // Reset animation state
+    setResultsVisible(false);
     setSubmittedUrl("");
 
     if (!url.trim()) {
-      setError("⚠️ Please enter a URL.");
+      setError("Error: URL parameter required");
       return;
     }
+
+    const command = `find-emails --url="${url.trim()}"`;
+    setCommandHistory((prev) => [...prev, command]);
     setLoading(true);
     setSubmittedUrl(url.trim());
+
     try {
       const res = await fetch("/api/find-emails", {
         method: "POST",
@@ -119,15 +119,15 @@ export default function EmailFinderClient() {
       });
       const json = await res.json();
       if (!res.ok) {
-        throw new Error(json.error || "An unknown error occurred.");
+        throw new Error(json.error || "Process terminated with error code 1");
       }
       setEmails(json.emails);
       if (json.emails.length > 0) {
-        setTimeout(() => setResultsVisible(true), 100); // Trigger animation after a short delay
+        setTimeout(() => setResultsVisible(true), 200);
       }
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : String(err);
-      setError(message);
+      setError(`Error: ${message}`);
     } finally {
       setLoading(false);
     }
@@ -137,7 +137,9 @@ export default function EmailFinderClient() {
     navigator.clipboard.writeText(text);
     setCopiedIdentifier(identifier);
     setToastMessage(
-      identifier === "all" ? "All emails copied!" : "Email copied!"
+      identifier === "all"
+        ? `Copied ${emails.length} emails to clipboard`
+        : "Email copied to clipboard"
     );
     setTimeout(() => {
       setCopiedIdentifier(null);
@@ -145,11 +147,24 @@ export default function EmailFinderClient() {
     }, 2500);
   };
 
+  const clearTerminal = () => {
+    setEmails([]);
+    setError(null);
+    setCommandHistory([]);
+    setSubmittedUrl("");
+    setUrl("");
+    inputRef.current?.focus();
+  };
+
   useEffect(() => {
     if (resultsVisible && resultsRef.current) {
       resultsRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
     }
   }, [resultsVisible]);
+
+  useEffect(() => {
+    inputRef.current?.focus();
+  }, []);
 
   const showResults = emails.length > 0;
   const showNotFoundError =
@@ -171,157 +186,168 @@ export default function EmailFinderClient() {
         .animate-toast-in {
           animation: toast-in 0.5s cubic-bezier(0.21, 1.02, 0.73, 1) forwards;
         }
+        .terminal-cursor::after {
+          content: '█';
+          animation: blink 1s infinite;
+        }
+        @keyframes blink {
+          0%, 50% { opacity: 1; }
+          51%, 100% { opacity: 0; }
+        }
       `}</style>
-      <div className="container mx-auto flex flex-col items-center justify-start p-6 pt-24 sm:pt-32 min-h-screen">
-        {toastMessage && <Toast message={toastMessage} />}
-        <div className="text-center mb-10">
-          <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-blue-600 to-cyan-400 dark:from-blue-500 dark:to-cyan-300 bg-clip-text text-transparent pb-2">
-            Instant Email Finder
-          </h1>
-          <p className="text-lg text-slate-600 dark:text-slate-400 mt-2">
-            Enter a website URL and we&apos;ll find the emails for you.
-          </p>
-        </div>
-        <div className="bg-white dark:bg-slate-800/50 rounded-xl shadow-lg dark:shadow-blue-500/10 w-full max-w-lg transition-all">
-          <div className="p-6 sm:p-8">
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="relative">
-                <svg
-                  className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400 dark:text-slate-500"
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="24"
-                  height="24"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.72"></path>
-                  <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.72-1.72"></path>
-                </svg>
+
+      <div className="min-h-screen bg-black text-green-400 font-mono p-4">
+        {toastMessage && <TerminalToast message={toastMessage} />}
+
+        <div className="max-w-4xl mx-auto">
+          {/* Terminal Header */}
+          <div className="border border-gray-700 bg-gray-900 mb-4">
+            <div className="flex items-center justify-between bg-gray-800 px-4 py-2 border-b border-gray-700">
+              <div className="flex items-center space-x-2">
+                <div className="w-3 h-3 rounded-full bg-red-500"></div>
+                <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
+                <div className="w-3 h-3 rounded-full bg-green-500"></div>
+              </div>
+              <span className="text-gray-400 text-sm">email-finder-v2.1.0</span>
+              <button
+                onClick={clearTerminal}
+                className="text-gray-400 hover:text-white text-sm px-2 py-1 hover:bg-gray-700 transition-colors"
+              >
+                clear
+              </button>
+            </div>
+
+            <div className="p-4 space-y-2">
+              {/* Welcome Message */}
+              <div className="text-green-500">
+                <div>Email Finder Terminal v2.1.0</div>
+                <div className="text-gray-500">
+                  Type a URL to scan for email addresses
+                </div>
+                <div className="text-gray-600 text-sm mt-1">
+                  Usage: find-emails --url=&quot;domain.com&quot;
+                </div>
+              </div>
+
+              {/* Command History */}
+              {commandHistory.map((cmd, index) => (
+                <div key={index} className="text-gray-400">
+                  <span className="text-green-500">user@terminal:~$</span> {cmd}
+                </div>
+              ))}
+
+              {/* Current Command Input */}
+              <form
+                onSubmit={handleSubmit}
+                className="flex items-center space-x-2"
+              >
+                <span className="text-green-500">user@terminal:~$</span>
+                <span className="text-gray-400">find-emails --url=&quot;</span>
                 <input
+                  ref={inputRef}
                   type="text"
-                  placeholder="example.com"
                   value={url}
                   onChange={(e) => setUrl(e.target.value)}
-                  className="w-full pl-11 pr-10 py-3 border bg-slate-100 dark:bg-slate-700/50 border-slate-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:border-blue-500 transition-all"
+                  placeholder="example.com"
+                  className="bg-transparent border-none outline-none text-green-400 flex-1 font-mono placeholder-gray-600"
+                  disabled={loading}
                 />
-                {url && (
+                <span className="text-gray-400">&quot;</span>
+                {!loading && (
                   <button
-                    type="button"
-                    onClick={() => setUrl("")}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-white"
+                    type="submit"
+                    className="text-gray-500 hover:text-green-400 transition-colors ml-4 px-2 py-1 border border-gray-700 hover:border-green-500 text-sm"
                   >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      width="20"
-                      height="20"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <circle cx="12" cy="12" r="10"></circle>
-                      <line x1="15" y1="9" x2="9" y2="15"></line>
-                      <line x1="9" y1="9" x2="15" y2="15"></line>
-                    </svg>
+                    [ENTER]
                   </button>
                 )}
-              </div>
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full py-3 rounded-lg font-semibold text-white transition-all duration-300 flex justify-center items-center bg-blue-600 hover:bg-blue-700 active:scale-[0.98] disabled:bg-blue-400 dark:disabled:bg-blue-500/50 disabled:cursor-wait"
-              >
-                {loading ? (
-                  <div className="h-6 w-6 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                ) : (
-                  "Find Emails"
-                )}
-              </button>
-            </form>
-          </div>
-          <div className="px-6 sm:px-8 pb-6 min-h-[10rem]">
-            {error && (
-              <div className="mt-4 text-red-700 dark:text-red-400 bg-red-100 dark:bg-red-500/10 p-3 rounded-lg flex items-center space-x-2">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="20"
-                  height="20"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <circle cx="12" cy="12" r="10"></circle>
-                  <line x1="12" y1="8" x2="12" y2="12"></line>
-                  <line x1="12" y1="16" x2="12.01" y2="16"></line>
-                </svg>
-                <span>{error}</span>
-              </div>
-            )}
-            {showResults && (
-              <div ref={resultsRef} className="mt-6">
-                <div className="flex justify-between items-center mb-4">
-                  <h2 className="text-lg font-semibold text-slate-700 dark:text-slate-300">
-                    Found {emails.length} email{emails.length > 1 && "s"}
-                  </h2>
-                  <button
-                    onClick={() => handleCopy(emails.join(", "), "all")}
-                    className="text-sm font-medium text-blue-600 dark:text-blue-400 hover:underline"
-                  >
-                    {copiedIdentifier === "all" ? "Copied!" : "Copy All"}
-                  </button>
+              </form>
+
+              {/* Loading State */}
+              {loading && (
+                <div className="mt-4 p-2 border-l-2 border-yellow-500 bg-yellow-500/5">
+                  <TerminalLoader />
                 </div>
-                <ul className="space-y-2">
-                  {emails.map((email, index) => (
-                    <ResultItem
-                      key={email}
-                      email={email}
-                      onCopy={() => handleCopy(email, email)}
-                      isCopied={copiedIdentifier === email}
-                      isVisible={resultsVisible}
-                      index={index}
-                    />
-                  ))}
-                </ul>
-              </div>
-            )}
-            {showNotFoundError && (
-              <div className="mt-6 text-center py-8">
-                <svg
-                  className="mx-auto h-12 w-12 text-slate-400"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  aria-hidden="true"
+              )}
+
+              {/* Error Display */}
+              {error && (
+                <div className="mt-4 p-3 border border-red-500 bg-red-500/10 text-red-400">
+                  <div className="flex items-center space-x-2">
+                    <span className="text-red-500">✗</span>
+                    <span>{error}</span>
+                  </div>
+                  <div className="text-red-600 text-sm mt-1">
+                    Process exited with code 1
+                  </div>
+                </div>
+              )}
+
+              {/* Results Display */}
+              {showResults && (
+                <div
+                  ref={resultsRef}
+                  className="mt-6 border border-green-500 bg-green-500/5"
                 >
-                  <path
-                    vectorEffect="non-scaling-stroke"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M9 13h6m-3-3v6m-9 1V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"
-                  ></path>
-                </svg>
-                <h3 className="mt-2 text-md font-semibold text-slate-800 dark:text-white">
-                  No emails found
-                </h3>
-                <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-                  We couldn&apos;t find any public emails at{" "}
-                  <span className="font-mono text-slate-600 dark:text-slate-300">
-                    {submittedUrl}
-                  </span>
-                  .
-                </p>
-              </div>
-            )}
+                  <div className="bg-green-500/10 px-3 py-2 border-b border-green-500 flex justify-between items-center">
+                    <span className="text-green-400 font-semibold">
+                      ✓ Scan complete: {emails.length} email
+                      {emails.length !== 1 ? "s" : ""} found
+                    </span>
+                    <button
+                      onClick={() => handleCopy(emails.join("\n"), "all")}
+                      className="text-xs px-2 py-1 border border-green-600 hover:bg-green-500/20 transition-colors"
+                    >
+                      {copiedIdentifier === "all" ? "✓ copied all" : "copy all"}
+                    </button>
+                  </div>
+                  <div className="p-3 space-y-1">
+                    {emails.map((email, index) => (
+                      <TerminalResultItem
+                        key={email}
+                        email={email}
+                        onCopy={() => handleCopy(email, email)}
+                        isCopied={copiedIdentifier === email}
+                        isVisible={resultsVisible}
+                        index={index}
+                      />
+                    ))}
+                  </div>
+                  <div className="px-3 py-2 border-t border-green-600 text-green-600 text-sm">
+                    Process completed successfully (exit code 0)
+                  </div>
+                </div>
+              )}
+
+              {/* No Results Found */}
+              {showNotFoundError && (
+                <div className="mt-4 p-3 border border-yellow-500 bg-yellow-500/10 text-yellow-400">
+                  <div className="flex items-center space-x-2">
+                    <span className="text-yellow-500">⚠</span>
+                    <span>No email addresses found at {submittedUrl}</span>
+                  </div>
+                  <div className="text-yellow-600 text-sm mt-1">
+                    The target may not have publicly accessible emails
+                  </div>
+                </div>
+              )}
+
+              {/* Terminal Cursor */}
+              {!loading && (
+                <div className="terminal-cursor text-green-400 inline-block"></div>
+              )}
+            </div>
+          </div>
+
+          {/* Terminal Footer */}
+          <div className="text-gray-600 text-sm text-center space-y-1">
+            <div>
+              Press Ctrl+C to interrupt • Type &apos;clear&apos; to reset
+              terminal
+            </div>
+            <div className="text-gray-700">
+              Built with ❤️ for developers • Status: Online
+            </div>
           </div>
         </div>
       </div>
