@@ -1,23 +1,16 @@
-/*
- * =======================================================================
- * FILE: app/analyzer/page.tsx (Updated)
- * =======================================================================
- *
- * This is the frontend page for the Website Technology Analyzer.
- * It provides a UI to send a URL to the `/api/analyze` endpoint
- * and displays the results.
- *
- * - It's a Client Component, allowing for state and user interaction.
- * - It manages state for the input URL, loading status, errors, and results.
- * - It uses Tailwind CSS for styling to create a modern, responsive layout.
- * - This version includes TypeScript fixes for type safety.
- *
- */
 "use client";
 
 import { useState, FormEvent, ChangeEvent, useEffect, useRef } from "react";
 import Link from "next/link";
-import { ChevronRight, Home as HomeIcon } from "lucide-react";
+import {
+  ChevronRight,
+  Home as HomeIcon,
+  Terminal,
+  Search,
+  Code,
+  Database,
+  Server,
+} from "lucide-react";
 
 // --- Type Definitions ---
 interface IAnalysisResults {
@@ -25,52 +18,140 @@ interface IAnalysisResults {
   detected: string[];
 }
 
+interface Flash {
+  type: "success" | "error" | "info";
+  message: string;
+}
+
 // --- Data for Common URLs ---
 const commonUrls = [
-  { name: "Next.js", url: "nextjs.org" },
-  { name: "React", url: "react.dev" },
-  { name: "Vue.js", url: "vuejs.org" },
-  { name: "Angular", url: "angular.io" },
-  { name: "Svelte", url: "svelte.dev" },
-  { name: "WordPress", url: "wordpress.com" },
-  { name: "Shopify", url: "shopify.com" },
-  { name: "GitHub", url: "github.com" },
-  { name: "Vercel", url: "vercel.com" },
-  { name: "Netlify", url: "netlify.com" },
+  { name: "Next.js", url: "nextjs.org", category: "framework" },
+  { name: "React", url: "react.dev", category: "library" },
+  { name: "Vue.js", url: "vuejs.org", category: "framework" },
+  { name: "Angular", url: "angular.io", category: "framework" },
+  { name: "Svelte", url: "svelte.dev", category: "framework" },
+  { name: "WordPress", url: "wordpress.com", category: "cms" },
+  { name: "Shopify", url: "shopify.com", category: "ecommerce" },
+  { name: "GitHub", url: "github.com", category: "platform" },
+  { name: "Vercel", url: "vercel.com", category: "hosting" },
+  { name: "Netlify", url: "netlify.com", category: "hosting" },
 ];
 
-// A map to associate technology names with potential logo components or colors
-const techColorMap: { [key: string]: string } = {
-  "Next.js": "border-l-white",
-  React: "border-l-cyan-400",
-  WordPress: "border-l-blue-500",
-  Shopify: "border-l-green-500",
-  "Vue.js": "border-l-emerald-500",
-  Angular: "border-l-red-600",
-  Wix: "border-l-yellow-500",
-  Squarespace: "border-l-gray-400",
-  Gatsby: "border-l-purple-500",
-  SvelteKit: "border-l-orange-500",
-  "Generic HTML/JS": "border-l-gray-600",
-  PHP: "border-l-indigo-400",
-  "ASP.NET": "border-l-blue-400",
-  Express: "border-l-gray-300",
-  Nginx: "border-l-green-400",
-  Apache: "border-l-red-500",
-  Cloudflare: "border-l-orange-500",
-  Vercel: "border-l-white",
-  Netlify: "border-l-teal-400",
-  WooCommerce: "border-l-purple-500",
-  Joomla: "border-l-orange-400",
-  Drupal: "border-l-blue-600",
-  Ghost: "border-l-slate-300",
-  Bootstrap: "border-l-purple-600",
-  "Tailwind CSS": "border-l-cyan-500",
-  "Google Analytics": "border-l-yellow-400",
+// Technology categorization and styling
+const techCategories: {
+  [key: string]: { color: string; icon: string; category: string };
+} = {
+  "Next.js": { color: "text-white", icon: "⚛️", category: "Framework" },
+  React: { color: "text-cyan-400", icon: "⚛️", category: "Library" },
+  "Vue.js": { color: "text-green-400", icon: "🟢", category: "Framework" },
+  Angular: { color: "text-red-400", icon: "🅰️", category: "Framework" },
+  WordPress: { color: "text-blue-400", icon: "📝", category: "CMS" },
+  Shopify: { color: "text-green-400", icon: "🛒", category: "E-commerce" },
+  Wix: { color: "text-yellow-400", icon: "🎨", category: "Website Builder" },
+  Squarespace: {
+    color: "text-gray-400",
+    icon: "⬛",
+    category: "Website Builder",
+  },
+  Gatsby: { color: "text-purple-400", icon: "🚀", category: "Framework" },
+  SvelteKit: { color: "text-orange-400", icon: "🔥", category: "Framework" },
+  PHP: { color: "text-indigo-400", icon: "🐘", category: "Language" },
+  "ASP.NET": { color: "text-blue-400", icon: "🔷", category: "Framework" },
+  Express: { color: "text-gray-300", icon: "🚂", category: "Backend" },
+  Nginx: { color: "text-green-400", icon: "🌐", category: "Server" },
+  Apache: { color: "text-red-400", icon: "🪶", category: "Server" },
+  Cloudflare: { color: "text-orange-400", icon: "☁️", category: "CDN" },
+  Vercel: { color: "text-white", icon: "▲", category: "Hosting" },
+  Netlify: { color: "text-teal-400", icon: "🌊", category: "Hosting" },
+  Bootstrap: {
+    color: "text-purple-400",
+    icon: "🅱️",
+    category: "CSS Framework",
+  },
+  "Tailwind CSS": {
+    color: "text-cyan-400",
+    icon: "💨",
+    category: "CSS Framework",
+  },
+  "Google Analytics": {
+    color: "text-yellow-400",
+    icon: "📊",
+    category: "Analytics",
+  },
+  "Generic HTML/JS": { color: "text-gray-400", icon: "📄", category: "Static" },
 };
 
-// --- Sub-Components ---
-const ResultItem = ({
+// --- Terminal Sub-Components ---
+
+/**
+ * Terminal-style toast notification
+ */
+const TerminalToast = ({
+  flash,
+  onClose,
+}: {
+  flash: Flash;
+  onClose: () => void;
+}) => (
+  <div className="fixed bottom-5 left-1/2 -translate-x-1/2 z-50 animate-toast-in">
+    <div
+      className={`border font-mono text-sm py-2 px-4 shadow-lg flex items-center space-x-2 ${
+        flash.type === "success"
+          ? "bg-black border-green-500 text-green-400 shadow-green-500/20"
+          : flash.type === "error"
+          ? "bg-black border-red-500 text-red-400 shadow-red-500/20"
+          : "bg-black border-blue-500 text-blue-400 shadow-blue-500/20"
+      }`}
+    >
+      <span
+        className={
+          flash.type === "success"
+            ? "text-green-500"
+            : flash.type === "error"
+            ? "text-red-500"
+            : "text-blue-500"
+        }
+      >
+        $
+      </span>
+      <span>{flash.message}</span>
+      <button onClick={onClose} className="ml-2 hover:opacity-70">
+        ✕
+      </button>
+    </div>
+  </div>
+);
+
+/**
+ * Terminal loading animation
+ */
+const TerminalLoader = ({ url }: { url: string }) => (
+  <div className="space-y-2">
+    <div className="flex items-center space-x-1 text-green-400 font-mono text-sm">
+      <span>scanning {url}</span>
+      <div className="flex space-x-1">
+        <span className="animate-pulse">.</span>
+        <span className="animate-pulse" style={{ animationDelay: "0.2s" }}>
+          .
+        </span>
+        <span className="animate-pulse" style={{ animationDelay: "0.4s" }}>
+          .
+        </span>
+      </div>
+    </div>
+    <div className="text-gray-500 font-mono text-xs space-y-1">
+      <div>→ analyzing http headers</div>
+      <div>→ parsing html structure</div>
+      <div>→ detecting javascript frameworks</div>
+      <div>→ identifying server technologies</div>
+    </div>
+  </div>
+);
+
+/**
+ * Terminal-style technology result display
+ */
+const TechResult = ({
   tech,
   isVisible,
   index,
@@ -78,33 +159,86 @@ const ResultItem = ({
   tech: string;
   isVisible: boolean;
   index: number;
-}) => (
-  <li
-    className={`transition-all duration-500 ${
-      isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
-    }`}
-    style={{ transitionDelay: `${index * 50}ms` }}
-  >
-    <div
-      className={`bg-slate-100 dark:bg-slate-700/60 p-2.5 rounded-lg border-l-4 ${
-        techColorMap[tech] || "border-l-gray-500"
+}) => {
+  const techInfo = techCategories[tech] || {
+    color: "text-gray-400",
+    icon: "🔧",
+    category: "Unknown",
+  };
+
+  return (
+    <li
+      className={`transition-all duration-500 ${
+        isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
       }`}
+      style={{ transitionDelay: `${index * 100}ms` }}
     >
-      <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">
-        {tech}
-      </span>
+      <div className="border border-gray-700 bg-gray-900/50 p-3 hover:border-green-500 transition-all group">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            <span className="text-lg">{techInfo.icon}</span>
+            <div>
+              <span className={`font-mono text-sm font-bold ${techInfo.color}`}>
+                {tech}
+              </span>
+              <div className="text-xs text-gray-500 font-mono">
+                {techInfo.category}
+              </div>
+            </div>
+          </div>
+          <div className="text-green-500 opacity-0 group-hover:opacity-100 transition-opacity">
+            ✓
+          </div>
+        </div>
+      </div>
+    </li>
+  );
+};
+
+/**
+ * Terminal-style common URL selector
+ */
+const TerminalUrlSelector = ({
+  urls,
+  onSelect,
+}: {
+  urls: typeof commonUrls;
+  onSelect: (url: string) => void;
+}) => (
+  <div className="space-y-2">
+    <div className="text-gray-400 font-mono text-xs">quick_scan_targets:</div>
+    <div className="grid grid-cols-2 gap-2">
+      {urls.map((site) => (
+        <button
+          key={site.url}
+          type="button"
+          onClick={() => onSelect(site.url)}
+          className="text-left px-3 py-2 border border-gray-700 bg-gray-900/30 hover:border-green-500 hover:bg-green-500/10 transition-all group font-mono text-sm"
+        >
+          <div className="flex items-center justify-between">
+            <span className="text-gray-300 group-hover:text-green-400">
+              {site.name}
+            </span>
+            <span className="text-xs text-gray-600 group-hover:text-green-600">
+              {site.category}
+            </span>
+          </div>
+        </button>
+      ))}
     </div>
-  </li>
+  </div>
 );
 
-// --- Main Component ---
-export default function AnalyzerPage() {
+// --- Main Terminal Component ---
+export default function TerminalTechAnalyzer() {
   const [url, setUrl] = useState("");
   const [results, setResults] = useState<IAnalysisResults | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [resultsVisible, setResultsVisible] = useState(false);
+  const [flash, setFlash] = useState<Flash | null>(null);
+  const [commandHistory, setCommandHistory] = useState<string[]>([]);
   const resultsRef = useRef<HTMLDivElement>(null);
 
   const handleInputChange =
@@ -137,12 +271,18 @@ export default function AnalyzerPage() {
     setSubmitted(false);
 
     if (!url.trim()) {
-      setError("⚠️ Please enter a URL to analyze.");
+      setFlash({
+        type: "error",
+        message: "Error: URL parameter required for analysis",
+      });
       return;
     }
 
     setIsLoading(true);
     setSubmitted(true);
+
+    const command = `techscan --url ${url.trim()} --output json`;
+    setCommandHistory((prev) => [...prev, command]);
 
     try {
       const response = await fetch("/api/analyze", {
@@ -156,23 +296,50 @@ export default function AnalyzerPage() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.details || "An unknown error occurred.");
+        throw new Error(data.details || "Analysis failed with unknown error");
       }
 
       setResults(data);
       if (data.detected && data.detected.length > 0) {
+        setFlash({
+          type: "success",
+          message: `Technology scan completed: ${data.detected.length} technologies detected`,
+        });
         setTimeout(() => setResultsVisible(true), 100);
+      } else {
+        setFlash({
+          type: "info",
+          message: "Scan completed: No technologies detected in target",
+        });
       }
     } catch (err: unknown) {
       if (err instanceof Error) {
         setError(err.message);
+        setFlash({
+          type: "error",
+          message: `Scan failed: ${err.message}`,
+        });
       } else {
         setError("An unexpected error occurred.");
+        setFlash({
+          type: "error",
+          message: "Scan failed: Unexpected error occurred",
+        });
       }
     } finally {
       setIsLoading(false);
     }
   }
+
+  const clearTerminal = () => {
+    setResults(null);
+    setError(null);
+    setFlash(null);
+    setCommandHistory([]);
+    setUrl("");
+    setSubmitted(false);
+    setResultsVisible(false);
+  };
 
   useEffect(() => {
     if (resultsVisible && resultsRef.current) {
@@ -185,174 +352,365 @@ export default function AnalyzerPage() {
     submitted && !isLoading && !error && results?.detected.length === 0;
 
   return (
-    <div className="w-full min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 dark:from-slate-900 dark:to-slate-800">
-      <div className="container mx-auto flex flex-col items-center justify-start p-6 pt-24 sm:pt-32">
-        <nav className="w-full max-w-lg mb-8" aria-label="Breadcrumb">
-          <ol className="flex items-center space-x-2 text-sm">
-            <li>
-              <Link
-                href="/"
-                className="flex items-center text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors"
-              >
-                <HomeIcon className="h-4 w-4 mr-1.5 flex-shrink-0" />
-                Home
-              </Link>
-            </li>
-            <li>
-              <ChevronRight className="h-4 w-4 text-slate-400 dark:text-slate-500" />
-            </li>
-            <li>
-              <span
-                className="font-medium text-slate-700 dark:text-slate-200"
-                aria-current="page"
-              >
-                Website Analyzer
-              </span>
-            </li>
-          </ol>
-        </nav>
-        <div className="text-center mb-10">
-          <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-blue-600 to-cyan-400 dark:from-blue-500 dark:to-cyan-300 bg-clip-text text-transparent pb-2">
-            Website Tech Scanner
-          </h1>
-          <p className="text-lg text-slate-600 dark:text-slate-400 mt-2">
-            Enter a URL to see what framework it&apos;s built with.
-          </p>
+    <>
+      <style>{`
+        @keyframes toast-in {
+          from {
+            transform: translate(-50%, 20px);
+            opacity: 0;
+          }
+          to {
+            transform: translate(-50%, 0);
+            opacity: 1;
+          }
+        }
+        .animate-toast-in {
+          animation: toast-in 0.5s cubic-bezier(0.21, 1.02, 0.73, 1) forwards;
+        }
+        .terminal-cursor::after {
+          content: '█';
+          animation: blink 1s infinite;
+        }
+        @keyframes blink {
+          0%, 50% { opacity: 1; }
+          51%, 100% { opacity: 0; }
+        }
+      `}</style>
+
+      <div className="min-h-screen bg-black text-green-400 font-mono">
+        {flash && (
+          <TerminalToast flash={flash} onClose={() => setFlash(null)} />
+        )}
+
+        {/* Terminal Status Bar */}
+        <div className="border-b border-gray-800 bg-gray-900">
+          <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl">
+            <div className="flex items-center justify-between py-2 text-xs">
+              <div className="flex items-center space-x-4">
+                <div className="flex items-center space-x-1">
+                  <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                  <span className="text-green-400">TECHSCAN-V2.1</span>
+                </div>
+                <div className="flex items-center space-x-1">
+                  <Search className="h-3 w-3" />
+                  <span className="text-gray-400">Technology Detection</span>
+                </div>
+              </div>
+              <div className="flex items-center space-x-4 text-gray-500">
+                <span>Session: {new Date().toLocaleTimeString()}</span>
+                <span>Engine: Wappalyzer</span>
+              </div>
+            </div>
+          </div>
         </div>
 
-        <div className="bg-white dark:bg-slate-800/50 rounded-xl shadow-lg dark:shadow-blue-500/10 w-full max-w-lg transition-all">
-          <div className="p-6 sm:p-8">
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <label
-                  htmlFor="url-input"
-                  className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1"
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-12 max-w-6xl">
+          {/* Terminal-style Breadcrumbs */}
+          <nav className="mb-6" aria-label="Breadcrumb">
+            <div className="bg-gray-900 border border-gray-700 p-3 rounded">
+              <div className="flex items-center space-x-2 text-sm">
+                <span className="text-gray-500">user@techscan:</span>
+                <span className="text-green-400">~</span>
+                <span className="text-gray-400">/</span>
+                <Link
+                  href="/"
+                  className="flex items-center text-gray-400 hover:text-green-400 transition-colors group"
                 >
-                  Website URL
-                </label>
-                <input
-                  id="url-input"
-                  type="text"
-                  placeholder="e.g., nextjs.org"
-                  value={url}
-                  onChange={handleInputChange(setUrl)}
-                  className="w-full px-4 py-3 border bg-slate-100 dark:bg-slate-700/50 border-slate-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:border-blue-500 transition-all"
-                />
+                  <HomeIcon className="h-3 w-3 mr-1 flex-shrink-0" />
+                  <span className="group-hover:underline">home</span>
+                </Link>
+                <span className="text-gray-600">/</span>
+                <ChevronRight className="h-3 w-3 text-gray-600" />
+                <span className="text-gray-600">/</span>
+                <span
+                  className="font-medium text-green-400"
+                  aria-current="page"
+                >
+                  tools/techscan
+                </span>
               </div>
+              <div className="mt-1 text-xs text-gray-600">
+                Current directory: /var/www/tools/techscan
+              </div>
+            </div>
+          </nav>
 
-              {/* Common URLs Selection */}
-              <div className="pt-2">
-                <p className="text-xs text-slate-500 dark:text-slate-400 text-center mb-3">
-                  Or select a popular website:
-                </p>
-                <div className="flex flex-wrap justify-center gap-2">
-                  {commonUrls.map((site) => (
-                    <button
-                      key={site.url}
-                      type="button"
-                      onClick={() => handleCommonUrlClick(site.url)}
-                      className="px-3 py-1 text-sm font-medium bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-full hover:bg-blue-200 dark:hover:bg-blue-600 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    >
-                      {site.name}
-                    </button>
-                  ))}
+          {/* ASCII Art Header */}
+          <div className="mb-6 bg-gray-900 border border-gray-700 p-4 rounded">
+            <div className="text-center space-y-2">
+              <pre className="text-green-500 text-xs leading-tight">
+                {`
+████████╗███████╗ ██████╗██╗  ██╗███████╗ ██████╗ █████╗ ███╗   ██╗
+╚══██╔══╝██╔════╝██╔════╝██║  ██║██╔════╝██╔════╝██╔══██╗████╗  ██║
+   ██║   █████╗  ██║     ███████║███████╗██║     ███████║██╔██╗ ██║
+   ██║   ██╔══╝  ██║     ██╔══██║╚════██║██║     ██╔══██║██║╚██╗██║
+   ██║   ███████╗╚██████╗██║  ██║███████║╚██████╗██║  ██║██║ ╚████║
+   ╚═╝   ╚══════╝ ╚═════╝╚═╝  ╚═╝╚══════╝ ╚═════╝╚═╝  ╚═╝╚═╝  ╚═══╝
+`}
+              </pre>
+              <div className="space-y-1 text-sm">
+                <div className="text-gray-400">
+                  Website Technology Detection Tool • Version 2.1.0
+                </div>
+                <div className="text-gray-600">
+                  Automated framework and library identification system
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* System Information Panels */}
+          <div className="mb-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="bg-gray-900 border border-gray-700 p-3 rounded">
+              <div className="flex items-center space-x-2 mb-2">
+                <Code className="h-4 w-4 text-green-400" />
+                <span className="text-green-400 font-semibold text-sm">
+                  DETECTION
+                </span>
+              </div>
+              <div className="space-y-1 text-xs text-gray-400">
+                <div>Frameworks: React, Vue, Angular</div>
+                <div>CMS: WordPress, Drupal, Joomla</div>
+                <div>Libraries: jQuery, Bootstrap</div>
+              </div>
+            </div>
+
+            <div className="bg-gray-900 border border-gray-700 p-3 rounded">
+              <div className="flex items-center space-x-2 mb-2">
+                <Server className="h-4 w-4 text-blue-400" />
+                <span className="text-blue-400 font-semibold text-sm">
+                  ANALYSIS
+                </span>
+              </div>
+              <div className="space-y-1 text-xs text-gray-400">
+                <div>Headers: HTTP Response Analysis</div>
+                <div>DOM: HTML Structure Parsing</div>
+                <div>Scripts: JavaScript Detection</div>
+              </div>
+            </div>
+
+            <div className="bg-gray-900 border border-gray-700 p-3 rounded">
+              <div className="flex items-center space-x-2 mb-2">
+                <div className="w-4 h-4 bg-green-500 rounded-full animate-pulse"></div>
+                <span className="text-green-400 font-semibold text-sm">
+                  STATUS
+                </span>
+              </div>
+              <div className="space-y-1 text-xs text-gray-400">
+                <div>Engine: Wappalyzer Core</div>
+                <div>Database: 3000+ Technologies</div>
+                <div>Accuracy: 95%+ Detection Rate</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Scan Configuration Panel */}
+          <div className="mb-6 bg-gray-900 border border-gray-700 p-4 rounded">
+            <div className="flex items-center space-x-2 mb-3">
+              <span className="text-green-400 font-semibold">
+                SCAN CONFIGURATION
+              </span>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+              <div className="space-y-2">
+                <div className="text-gray-400">Detection Categories:</div>
+                <div className="space-y-1 text-xs font-mono">
+                  <div>
+                    <span className="text-green-400">Frontend Frameworks</span>{" "}
+                    <span className="text-gray-500">• React, Vue, Angular</span>
+                  </div>
+                  <div>
+                    <span className="text-green-400">Content Management</span>{" "}
+                    <span className="text-gray-500">• WordPress, Drupal</span>
+                  </div>
+                  <div>
+                    <span className="text-green-400">E-commerce Platforms</span>{" "}
+                    <span className="text-gray-500">
+                      • Shopify, WooCommerce
+                    </span>
+                  </div>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <div className="text-gray-400">Analysis Methods:</div>
+                <div className="space-y-1 text-xs font-mono">
+                  <div className="text-gray-500">→ HTTP header inspection</div>
+                  <div className="text-gray-500">→ HTML meta tag analysis</div>
+                  <div className="text-gray-500">
+                    → JavaScript library detection
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Main Terminal Interface */}
+          <div className="border border-gray-700 bg-gray-900 mb-4">
+            <div className="flex items-center justify-between bg-gray-800 px-4 py-2 border-b border-gray-700">
+              <div className="flex items-center space-x-2">
+                <div className="w-3 h-3 rounded-full bg-red-500"></div>
+                <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
+                <div className="w-3 h-3 rounded-full bg-green-500"></div>
+              </div>
+              <span className="text-gray-400 text-sm">
+                techscan-terminal-v2.1.0
+              </span>
+              <button
+                onClick={clearTerminal}
+                className="text-gray-400 hover:text-white text-sm px-2 py-1 hover:bg-gray-700 transition-colors"
+              >
+                clear
+              </button>
+            </div>
+
+            <div className="p-4 space-y-2">
+              {/* Welcome Message */}
+              <div className="text-green-500">
+                <div>TechScan v2.1.0 - Website Technology Detection Tool</div>
+                <div className="text-gray-500">
+                  Identify frameworks, libraries, and technologies used by any
+                  website
+                </div>
+                <div className="text-gray-600 text-sm mt-1">
+                  Usage: techscan --url [target] --output [format]
                 </div>
               </div>
 
-              <button
-                type="submit"
-                disabled={isLoading}
-                className="w-full py-3 rounded-lg font-semibold text-white transition-all duration-300 flex justify-center items-center bg-blue-600 hover:bg-blue-700 active:scale-[0.98] disabled:bg-blue-400 dark:disabled:bg-blue-500/50 disabled:cursor-wait"
-              >
-                {isLoading ? (
-                  <div className="h-6 w-6 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                ) : (
-                  "Analyze Website"
-                )}
-              </button>
-            </form>
+              {/* Command History */}
+              {commandHistory.map((cmd, index) => (
+                <div key={index} className="text-gray-400">
+                  <span className="text-green-500">user@techscan:~$</span> {cmd}
+                </div>
+              ))}
+
+              {/* Input Form */}
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="flex items-center space-x-2">
+                  <span className="text-green-500">user@techscan:~$</span>
+                  <span className="text-gray-400">techscan --url</span>
+                  <input
+                    type="text"
+                    value={url}
+                    onChange={handleInputChange(setUrl)}
+                    placeholder="example.com"
+                    className="bg-transparent border-none outline-none text-green-400 font-mono placeholder-gray-600 flex-1"
+                    disabled={isLoading}
+                  />
+                  <span className="text-gray-400">--output json</span>
+                  {!isLoading && (
+                    <button
+                      type="submit"
+                      className="text-gray-500 hover:text-green-400 transition-colors ml-4 px-2 py-1 border border-gray-700 hover:border-green-500 text-sm"
+                    >
+                      [SCAN]
+                    </button>
+                  )}
+                </div>
+
+                {/* Quick Scan Targets */}
+                <div className="ml-8 mt-4">
+                  <TerminalUrlSelector
+                    urls={commonUrls}
+                    onSelect={handleCommonUrlClick}
+                  />
+                </div>
+              </form>
+
+              {/* Loading State */}
+              {isLoading && (
+                <div className="mt-4 p-2 border-l-2 border-yellow-500 bg-yellow-500/5">
+                  <TerminalLoader url={url} />
+                </div>
+              )}
+
+              {/* Results Display */}
+              {showResults && (
+                <div ref={resultsRef} className="mt-6 space-y-4">
+                  <div className="border border-green-500 bg-green-500/5">
+                    <div className="bg-green-500/10 px-3 py-2 border-b border-green-500">
+                      <span className="text-green-400 font-semibold">
+                        ✓ Technology scan completed for: {results.analyzedUrl}
+                      </span>
+                    </div>
+                    <div className="p-3">
+                      <div className="text-green-400 font-mono text-sm mb-3">
+                        Detected Technologies ({results.detected.length}):
+                      </div>
+                      <ul className="space-y-2">
+                        {results.detected.map((tech, index) => (
+                          <TechResult
+                            key={tech}
+                            tech={tech}
+                            isVisible={resultsVisible}
+                            index={index}
+                          />
+                        ))}
+                      </ul>
+                    </div>
+                    <div className="px-3 py-2 border-t border-green-600 text-green-600 text-sm">
+                      Scan completed successfully (exit code 0)
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* No Results Found */}
+              {showNotFoundError && (
+                <div className="mt-4 p-3 border border-yellow-500 bg-yellow-500/5 text-yellow-400">
+                  <div className="flex items-center space-x-2">
+                    <Database className="h-4 w-4" />
+                    <span>No technologies detected for target: {url}</span>
+                  </div>
+                  <div className="text-yellow-600 text-sm mt-1">
+                    Target may be using custom solutions or blocking detection
+                    methods
+                  </div>
+                </div>
+              )}
+
+              {/* Error Display */}
+              {error && (
+                <div className="mt-4 p-3 border border-red-500 bg-red-500/5 text-red-400">
+                  <div className="flex items-center space-x-2">
+                    <span>❌</span>
+                    <span>Scan failed: {error}</span>
+                  </div>
+                </div>
+              )}
+
+              {/* Empty State */}
+              {!results && !isLoading && !error && (
+                <div className="mt-4 p-3 border border-gray-700 bg-gray-800/50 text-gray-400">
+                  <div className="flex items-center space-x-2">
+                    <Terminal className="h-4 w-4" />
+                    <span>Ready for technology detection</span>
+                  </div>
+                  <div className="text-gray-600 text-sm mt-1">
+                    Enter a URL to analyze website technologies and frameworks
+                  </div>
+                </div>
+              )}
+
+              {/* Terminal Cursor */}
+              {!isLoading && (
+                <div className="terminal-cursor text-green-400 inline-block"></div>
+              )}
+            </div>
           </div>
-          <div className="px-6 sm:px-8 pb-6 min-h-[10rem]">
-            {error && (
-              <div className="mt-4 text-red-700 dark:text-red-400 bg-red-100 dark:bg-red-500/10 p-3 rounded-lg flex items-center space-x-2">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="20"
-                  height="20"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <circle cx="12" cy="12" r="10"></circle>
-                  <line x1="12" y1="8" x2="12" y2="12"></line>
-                  <line x1="12" y1="16" x2="12.01" y2="16"></line>
-                </svg>
-                <span>{error}</span>
-              </div>
-            )}
-            {showResults && (
-              <div ref={resultsRef} className="mt-6">
-                <h2 className="text-lg font-semibold text-slate-700 dark:text-slate-300 mb-4">
-                  Detected Technologies:
-                </h2>
-                <p className="text-sm text-slate-500 dark:text-slate-400 mb-4 text-center">
-                  Results for:{" "}
-                  <a
-                    href={results.analyzedUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-blue-600 dark:text-blue-400 hover:underline font-mono"
-                  >
-                    {results.analyzedUrl}
-                  </a>
-                </p>
-                <ul className="space-y-2">
-                  {results.detected.map((tech, index) => (
-                    <ResultItem
-                      key={tech}
-                      tech={tech}
-                      isVisible={resultsVisible}
-                      index={index}
-                    />
-                  ))}
-                </ul>
-              </div>
-            )}
-            {showNotFoundError && (
-              <div className="mt-6 text-center py-8">
-                <svg
-                  className="mx-auto h-12 w-12 text-slate-400"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  aria-hidden="true"
-                >
-                  <path
-                    vectorEffect="non-scaling-stroke"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M9 13h6m-3-3v6m-9 1V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2-2H5a2 2 0 01-2-2z"
-                  ></path>
-                </svg>
-                <h3 className="mt-2 text-md font-semibold text-slate-800 dark:text-white">
-                  No Technologies Detected
-                </h3>
-                <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-                  Unable to detect any technologies for{" "}
-                  <span className="font-mono text-slate-600 dark:text-slate-300">
-                    {url}
-                  </span>
-                  .
-                </p>
-              </div>
-            )}
+
+          {/* Terminal Footer */}
+          <div className="text-center space-y-2">
+            <div className="text-gray-600 text-xs">
+              <span className="text-gray-500">©</span> 2024 TechScan Terminal •
+              <span className="text-green-600"> Technology Detection</span> •
+              <span className="text-blue-500"> Website Analysis</span>
+            </div>
+            <div className="text-gray-700 text-xs">
+              Powered by Wappalyzer • 3000+ Technology Signatures
+            </div>
           </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }

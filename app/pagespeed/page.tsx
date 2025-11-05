@@ -5,11 +5,13 @@ import Link from "next/link";
 import {
   Home as HomeIcon,
   ChevronRight,
-  Globe,
   Zap,
   Eye,
   Shield,
   Search,
+  Terminal,
+  Activity,
+  Monitor,
 } from "lucide-react";
 
 // Define a more robust type for the results. All properties are optional
@@ -40,11 +42,184 @@ interface Flash {
   message: string;
 }
 
-export default function PageSpeedPage() {
+// --- Terminal Sub-Components ---
+
+/**
+ * Terminal-style toast notification
+ */
+const TerminalToast = ({
+  flash,
+  onClose,
+}: {
+  flash: Flash;
+  onClose: () => void;
+}) => (
+  <div className="fixed bottom-5 left-1/2 -translate-x-1/2 z-50 animate-toast-in">
+    <div
+      className={`border font-mono text-sm py-2 px-4 shadow-lg flex items-center space-x-2 ${
+        flash.type === "success"
+          ? "bg-black border-green-500 text-green-400 shadow-green-500/20"
+          : flash.type === "error"
+          ? "bg-black border-red-500 text-red-400 shadow-red-500/20"
+          : "bg-black border-blue-500 text-blue-400 shadow-blue-500/20"
+      }`}
+    >
+      <span
+        className={
+          flash.type === "success"
+            ? "text-green-500"
+            : flash.type === "error"
+            ? "text-red-500"
+            : "text-blue-500"
+        }
+      >
+        $
+      </span>
+      <span>{flash.message}</span>
+      <button onClick={onClose} className="ml-2 hover:opacity-70">
+        ✕
+      </button>
+    </div>
+  </div>
+);
+
+/**
+ * Terminal loading animation
+ */
+const TerminalLoader = ({ url }: { url: string }) => (
+  <div className="space-y-2">
+    <div className="flex items-center space-x-1 text-blue-400 font-mono text-sm">
+      <span>analyzing {url}</span>
+      <div className="flex space-x-1">
+        <span className="animate-pulse">.</span>
+        <span className="animate-pulse" style={{ animationDelay: "0.2s" }}>
+          .
+        </span>
+        <span className="animate-pulse" style={{ animationDelay: "0.4s" }}>
+          .
+        </span>
+      </div>
+    </div>
+    <div className="text-gray-500 font-mono text-xs space-y-1">
+      <div>→ lighthouse audit initiated</div>
+      <div>→ performance metrics collection</div>
+      <div>→ accessibility evaluation</div>
+      <div>→ seo analysis in progress</div>
+    </div>
+    {/* New Progress Bar */}
+    <div className="w-full bg-gray-800 border border-gray-700 mt-2 p-0.5">
+      <div className="bg-blue-500 h-1 animate-progress"></div>
+    </div>
+    <div className="text-blue-600 text-xs text-center">
+      [ AUDIT IN PROGRESS ]
+    </div>
+  </div>
+);
+
+/**
+ * Terminal-style performance score display
+ */
+const TerminalScore = ({
+  title,
+  score,
+  icon,
+  metric,
+}: {
+  title: string;
+  score: number | undefined;
+  icon: React.ReactNode;
+  metric: string;
+}) => {
+  const scoreIn100 = Math.round((score || 0) * 100);
+
+  const getScoreStatus = (s: number) => {
+    if (s >= 90)
+      return {
+        color: "text-green-400",
+        bg: "bg-green-500/10",
+        border: "border-green-500",
+        status: "EXCELLENT",
+      };
+    if (s >= 50)
+      return {
+        color: "text-yellow-400",
+        bg: "bg-yellow-500/10",
+        border: "border-yellow-500",
+        status: "NEEDS WORK",
+      };
+    return {
+      color: "text-red-400",
+      bg: "bg-red-500/10",
+      border: "border-red-500",
+      status: "POOR",
+    };
+  };
+
+  const { color, bg, border, status } = getScoreStatus(scoreIn100);
+
+  return (
+    <div
+      className={`border ${border} ${bg} p-4 transition-all hover:bg-opacity-20`}
+    >
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center space-x-2">
+          <div className="text-gray-400">{icon}</div>
+          <span className="font-mono text-sm text-gray-300">{metric}</span>
+        </div>
+        <div className={`font-mono text-lg font-bold ${color}`}>
+          {scoreIn100}
+        </div>
+      </div>
+      <div className="flex justify-between items-center">
+        <span className="font-mono text-xs text-gray-400">{title}</span>
+        <span
+          className={`font-mono text-xs px-2 py-1 border ${border} ${color}`}
+        >
+          {status}
+        </span>
+      </div>
+    </div>
+  );
+};
+
+/**
+ * Terminal-style Core Web Vitals display
+ */
+const TerminalVital = ({
+  name,
+  value,
+  description,
+  color,
+}: {
+  name: string;
+  value: string;
+  description: string;
+  color: string;
+}) => (
+  <div
+    className={`border border-gray-700 bg-gray-900/50 p-4 hover:border-${color}-500 transition-all group`}
+  >
+    <div className="flex items-center justify-between mb-2">
+      <div
+        className={`px-2 py-1 font-mono text-xs border border-${color}-500 text-${color}-400 bg-${color}-500/10`}
+      >
+        {name}
+      </div>
+      <div className={`font-mono text-lg font-bold text-${color}-400`}>
+        {value || "N/A"}
+      </div>
+    </div>
+    <div className="font-mono text-xs text-gray-500">{description}</div>
+  </div>
+);
+
+// --- Main Terminal Component ---
+export default function TerminalPerformanceChecker() {
   const [url, setUrl] = useState("");
   const [results, setResults] = useState<LighthouseResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [flash, setFlash] = useState<Flash | null>(null);
+  const [commandHistory, setCommandHistory] = useState<string[]>([]);
 
   // Helper function to normalize URL
   const normalizeUrl = (inputUrl: string): string => {
@@ -76,380 +251,487 @@ export default function PageSpeedPage() {
     setResults(null);
     setFlash(null);
 
-    // Normalize and validate URL
+    const startTime = Date.now();
+    const minLoadingTime = 4000; // Match CSS animation duration
+
     const normalizedUrl = normalizeUrl(url);
 
     if (!normalizedUrl || !isValidUrl(normalizedUrl)) {
       setFlash({
         type: "error",
         message:
-          "Please enter a valid URL (e.g., example.com or https://www.example.com)",
+          "Error: Invalid URL format. Use example.com or https://example.com",
       });
       setLoading(false);
       return;
     }
 
+    const command = `lighthouse ${normalizedUrl} --output=json`;
+    setCommandHistory((prev) => [...prev, command]);
+
     try {
-      // Call our internal API route with the normalized URL
       const response = await fetch(
         `/api/pagespeed?url=${encodeURIComponent(normalizedUrl)}`
       );
-
       const data: LighthouseResult = await response.json();
-
-      // Handle errors returned within the API response body
       if (data.error) {
         throw new Error(data.error.message);
       }
-
-      // Handle cases where the analysis runs but produces no results
       if (!data.lighthouseResult) {
         throw new Error(
-          "Analysis failed. The website might be blocking automated tools or is not publicly accessible."
+          "Analysis failed. Target may be blocking automated tools or not publicly accessible."
         );
       }
-
       setResults(data);
       setFlash({
         type: "success",
-        message: "Website analysis completed successfully!",
+        message: "Performance audit completed successfully",
       });
     } catch (err) {
-      // Type-safe error handling to resolve the 'no-explicit-any' ESLint rule.
       if (err instanceof Error) {
-        setFlash({ type: "error", message: err.message });
+        setFlash({ type: "error", message: `Error: ${err.message}` });
       } else {
-        setFlash({ type: "error", message: "An unknown error occurred." });
+        setFlash({ type: "error", message: "Error: Unknown analysis failure" });
       }
     } finally {
-      setLoading(false);
+      const elapsedTime = Date.now() - startTime;
+      const remainingTime = minLoadingTime - elapsedTime;
+
+      setTimeout(() => {
+        setLoading(false);
+      }, Math.max(0, remainingTime));
     }
   };
 
-  // A helper component to display scores safely
-  const Score = ({
-    title,
-    score,
-    icon,
-  }: {
-    title: string;
-    score: number | undefined;
-    icon: React.ReactNode;
-  }) => {
-    // Default to 0 if the score is missing, preventing a crash
-    const scoreIn100 = Math.round((score || 0) * 100);
-    const getScoreColor = (s: number) => {
-      if (s >= 90) return "text-green-600 dark:text-green-400";
-      if (s >= 50) return "text-yellow-500 dark:text-yellow-400";
-      return "text-red-600 dark:text-red-400";
-    };
-
-    const getScoreBg = (s: number) => {
-      if (s >= 90)
-        return "bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800";
-      if (s >= 50)
-        return "bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800";
-      return "bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800";
-    };
-
-    return (
-      <div
-        className={`p-6 rounded-xl border shadow-lg transition-all hover:shadow-xl ${getScoreBg(
-          scoreIn100
-        )}`}
-      >
-        <div className="flex items-center justify-between mb-3">
-          <div className="p-2 bg-white dark:bg-slate-700 rounded-lg shadow-sm">
-            {icon}
-          </div>
-          <div className={`text-3xl font-bold ${getScoreColor(scoreIn100)}`}>
-            {scoreIn100}
-          </div>
-        </div>
-        <div className="text-sm font-medium text-gray-700 dark:text-gray-300">
-          {title}
-        </div>
-      </div>
-    );
+  const clearTerminal = () => {
+    setResults(null);
+    setFlash(null);
+    setCommandHistory([]);
+    setUrl("");
   };
 
   return (
-    <div className="w-full min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 dark:from-slate-900 dark:to-slate-800">
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-12 max-w-6xl">
-        {/* Breadcrumbs Navigation */}
-        <nav className="mb-8" aria-label="Breadcrumb">
-          <ol className="flex items-center space-x-2 text-sm">
-            <li>
-              <Link
-                href="/"
-                className="flex items-center text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors"
-              >
-                <HomeIcon className="h-4 w-4 mr-1.5 flex-shrink-0" />
-                Home
-              </Link>
-            </li>
-            <li>
-              <ChevronRight className="h-4 w-4 text-slate-400 dark:text-slate-500" />
-            </li>
-            <li>
-              <span
-                className="font-medium text-slate-700 dark:text-slate-200"
-                aria-current="page"
-              >
-                Performance Checker
-              </span>
-            </li>
-          </ol>
-        </nav>
+    <>
+      <style>{`
+        @keyframes toast-in {
+          from {
+            transform: translate(-50%, 20px);
+            opacity: 0;
+          }
+          to {
+            transform: translate(-50%, 0);
+            opacity: 1;
+          }
+        }
+        .animate-toast-in {
+          animation: toast-in 0.5s cubic-bezier(0.21, 1.02, 0.73, 1) forwards;
+        }
+        .terminal-cursor::after {
+          content: '█';
+          animation: blink 1s infinite;
+        }
+        @keyframes blink {
+          0%, 50% { opacity: 1; }
+          51%, 100% { opacity: 0; }
+        }
+        @keyframes progress-bar {
+          from { width: 0%; }
+          to { width: 100%; }
+        }
+        .animate-progress {
+          animation: progress-bar 4s ease-out forwards;
+        }
+        @keyframes result-fade-in {
+          from { opacity: 0; transform: translateY(10px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-result-fade-in {
+          animation: result-fade-in 0.5s ease-out forwards;
+        }
+      `}</style>
 
-        {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="p-3 bg-blue-600 rounded-xl">
-              <Globe className="h-8 w-8 text-white" />
-            </div>
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
-                Website Performance Checker
-              </h1>
-              <p className="text-gray-600 dark:text-gray-400">
-                Analyze your website&apos;s performance, accessibility, and SEO
-                metrics
-              </p>
+      <div className="min-h-screen bg-black text-blue-400 font-mono">
+        {flash && (
+          <TerminalToast flash={flash} onClose={() => setFlash(null)} />
+        )}
+
+        {/* Terminal Status Bar */}
+        <div className="border-b border-gray-800 bg-gray-900">
+          <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl">
+            <div className="flex items-center justify-between py-2 text-xs">
+              <div className="flex items-center space-x-4">
+                <div className="flex items-center space-x-1">
+                  <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+                  <span className="text-blue-400">LIGHTHOUSE-AUDIT</span>
+                </div>
+                <div className="flex items-center space-x-1">
+                  <Activity className="h-3 w-3" />
+                  <span className="text-gray-400">Performance Analysis</span>
+                </div>
+              </div>
+              <div className="flex items-center space-x-4 text-gray-500">
+                <span>Session: {new Date().toLocaleTimeString()}</span>
+                <span>Engine: Lighthouse v11</span>
+              </div>
             </div>
           </div>
         </div>
 
-        {/* Flash Messages */}
-        {flash && (
-          <div
-            className={`mb-6 rounded-xl p-4 shadow-lg border-l-4 transition-all duration-300 ${
-              flash.type === "success"
-                ? "bg-green-50 dark:bg-green-900/20 border-green-400 text-green-800 dark:text-green-300"
-                : flash.type === "error"
-                ? "bg-red-50 dark:bg-red-900/20 border-red-400 text-red-800 dark:text-red-300"
-                : "bg-blue-50 dark:bg-blue-900/20 border-blue-400 text-blue-800 dark:text-blue-300"
-            }`}
-          >
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                {flash.type === "success" ? (
-                  <span className="text-lg">✅</span>
-                ) : flash.type === "error" ? (
-                  <span className="text-lg">❌</span>
-                ) : (
-                  <span className="text-lg">ℹ️</span>
-                )}
-                <span className="font-medium">{flash.message}</span>
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-12 max-w-7xl">
+          {/* Terminal-style Breadcrumbs */}
+          <nav className="mb-6" aria-label="Breadcrumb">
+            <div className="bg-gray-900 border border-gray-700 p-3 rounded">
+              <div className="flex items-center space-x-2 text-sm">
+                <span className="text-gray-500">user@system:</span>
+                <span className="text-blue-400">~</span>
+                <span className="text-gray-400">/</span>
+                <Link
+                  href="/"
+                  className="flex items-center text-gray-400 hover:text-blue-400 transition-colors group"
+                >
+                  <HomeIcon className="h-3 w-3 mr-1 flex-shrink-0" />
+                  <span className="group-hover:underline">home</span>
+                </Link>
+                <span className="text-gray-600">/</span>
+                <ChevronRight className="h-3 w-3 text-gray-600" />
+                <span className="text-gray-600">/</span>
+                <span className="font-medium text-blue-400" aria-current="page">
+                  tools/lighthouse
+                </span>
               </div>
+              <div className="mt-1 text-xs text-gray-600">
+                Current directory: /var/www/tools/lighthouse
+              </div>
+            </div>
+          </nav>
+
+          {/* ASCII Art Header */}
+          <div className="mb-6 bg-gray-900 border border-gray-700 p-4 rounded">
+            <div className="text-center space-y-2">
+              <pre className="text-blue-500 text-xs leading-tight">
+                {`
+ ██╗     ██╗ ██████╗ ██╗  ██╗████████╗██╗  ██╗ ██████╗ ██╗   ██╗███████╗███████╗
+ ██║     ██║██╔════╝ ██║  ██║╚══██╔══╝██║  ██║██╔═══██╗██║   ██║██╔════╝██╔════╝
+ ██║     ██║██║  ███╗███████║   ██║   ███████║██║   ██║██║   ██║███████╗█████╗  
+ ██║     ██║██║   ██║██╔══██║   ██║   ██╔══██║██║   ██║██║   ██║╚════██║██╔══╝  
+ ███████╗██║╚██████╔╝██║  ██║   ██║   ██║  ██║╚██████╔╝╚██████╔╝███████║███████╗
+ ╚══════╝╚═╝ ╚═════╝ ╚═╝  ╚═╝   ╚═╝   ╚═╝  ╚═╝ ╚═════╝  ╚═════╝ ╚══════╝╚══════╝
+`}
+              </pre>
+              <div className="space-y-1 text-sm">
+                <div className="text-gray-400">
+                  Website Performance Audit Tool • Version 11.7.1
+                </div>
+                <div className="text-gray-600">
+                  Automated performance, accessibility, and SEO analysis
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* System Information Panels */}
+          <div className="mb-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="bg-gray-900 border border-gray-700 p-3 rounded">
+              <div className="flex items-center space-x-2 mb-2">
+                <Terminal className="h-4 w-4 text-blue-400" />
+                <span className="text-blue-400 font-semibold text-sm">
+                  LIGHTHOUSE
+                </span>
+              </div>
+              <div className="space-y-1 text-xs text-gray-400">
+                <div>Engine: Chrome DevTools</div>
+                <div>Throttling: 4G Mobile</div>
+                <div>Device: Nexus 5X</div>
+              </div>
+            </div>
+
+            <div className="bg-gray-900 border border-gray-700 p-3 rounded">
+              <div className="flex items-center space-x-2 mb-2">
+                <div className="w-4 h-4 bg-blue-500 rounded-full animate-pulse"></div>
+                <span className="text-blue-400 font-semibold text-sm">
+                  METRICS
+                </span>
+              </div>
+              <div className="space-y-1 text-xs text-gray-400">
+                <div>Performance: Core Web Vitals</div>
+                <div>Accessibility: WCAG 2.1</div>
+                <div>SEO: Best Practices</div>
+              </div>
+            </div>
+
+            <div className="bg-gray-900 border border-gray-700 p-3 rounded">
+              <div className="flex items-center space-x-2 mb-2">
+                <div className="w-4 h-4 bg-green-500 rounded-full"></div>
+                <span className="text-green-400 font-semibold text-sm">
+                  AUDIT
+                </span>
+              </div>
+              <div className="space-y-1 text-xs text-gray-400">
+                <div>Mode: Navigation</div>
+                <div>Strategy: Mobile-First</div>
+                <div>Output: JSON Report</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Audit Configuration Panel */}
+          <div className="mb-6 bg-gray-900 border border-gray-700 p-4 rounded">
+            <div className="flex items-center space-x-2 mb-3">
+              <span className="text-blue-400 font-semibold">
+                AUDIT CONFIGURATION
+              </span>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+              <div className="space-y-2">
+                <div className="text-gray-400">Performance Metrics:</div>
+                <div className="space-y-1 text-xs font-mono">
+                  <div>
+                    <span className="text-blue-400">
+                      First Contentful Paint
+                    </span>{" "}
+                    <span className="text-gray-500">• Initial render time</span>
+                  </div>
+                  <div>
+                    <span className="text-blue-400">
+                      Largest Contentful Paint
+                    </span>{" "}
+                    <span className="text-gray-500">• Main content load</span>
+                  </div>
+                  <div>
+                    <span className="text-blue-400">
+                      Cumulative Layout Shift
+                    </span>{" "}
+                    <span className="text-gray-500">• Visual stability</span>
+                  </div>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <div className="text-gray-400">Analysis Categories:</div>
+                <div className="space-y-1 text-xs font-mono">
+                  <div className="text-gray-500">
+                    → Performance optimization
+                  </div>
+                  <div className="text-gray-500">
+                    → Accessibility compliance
+                  </div>
+                  <div className="text-gray-500">→ SEO best practices</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Main Terminal Interface */}
+          <div className="border border-gray-700 bg-gray-900 mb-4">
+            <div className="flex items-center justify-between bg-gray-800 px-4 py-2 border-b border-gray-700">
+              <div className="flex items-center space-x-2">
+                <div className="w-3 h-3 rounded-full bg-red-500"></div>
+                <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
+                <div className="w-3 h-3 rounded-full bg-green-500"></div>
+              </div>
+              <span className="text-gray-400 text-sm">
+                lighthouse-audit-v11.7.1
+              </span>
               <button
-                onClick={() => setFlash(null)}
-                className="hover:opacity-70 transition-opacity"
+                onClick={clearTerminal}
+                className="text-gray-400 hover:text-white text-sm px-2 py-1 hover:bg-gray-700 transition-colors"
               >
-                <span className="text-lg">✖️</span>
+                clear
               </button>
             </div>
-          </div>
-        )}
 
-        {/* Analysis Form */}
-        <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl p-6 lg:p-8 mb-8">
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-6 flex items-center gap-2">
-            <span>🔍</span>
-            Analyze Website
-          </h2>
+            <div className="p-4 space-y-2">
+              {/* Welcome Message */}
+              <div className="text-blue-500">
+                <div>Lighthouse Performance Audit Tool v11.7.1</div>
+                <div className="text-gray-500">
+                  Configure target URL for comprehensive website analysis
+                </div>
+                <div className="text-gray-600 text-sm mt-1">
+                  Usage: lighthouse [url] --output=json
+                  --chrome-flags=&quot;--headless&quot;
+                </div>
+              </div>
 
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-2">
-                <Globe className="h-4 w-4" />
-                Website URL *
-              </label>
-              <div className="flex flex-col sm:flex-row gap-3">
-                <input
-                  type="text"
-                  value={url}
-                  onChange={(e) => setUrl(e.target.value)}
-                  placeholder="example.com or https://www.example.com"
-                  className="flex-1 p-3 lg:p-4 border border-gray-200 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-slate-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                  required
-                />
-                <button
-                  type="submit"
-                  disabled={loading || !url}
-                  className="px-6 py-3 lg:py-4 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center gap-2 shadow-lg min-w-[140px]"
-                >
-                  {loading ? (
-                    <>
-                      <span className="animate-spin">⏳</span>
-                      Analyzing...
-                    </>
-                  ) : (
-                    <>
-                      <span>🚀</span>
-                      Analyze
-                    </>
+              {/* Command History */}
+              {commandHistory.map((cmd, index) => (
+                <div key={index} className="text-gray-400">
+                  <span className="text-blue-500">user@lighthouse:~$</span>{" "}
+                  {cmd}
+                </div>
+              ))}
+
+              {/* Input Form */}
+              <form onSubmit={handleSubmit} className="space-y-3">
+                <div className="flex items-center space-x-2">
+                  <span className="text-blue-500">user@lighthouse:~$</span>
+                  <span className="text-gray-400">lighthouse</span>
+                  <input
+                    type="text"
+                    value={url}
+                    onChange={(e) => setUrl(e.target.value)}
+                    placeholder="https://example.com"
+                    className="bg-transparent border-none outline-none text-blue-400 font-mono placeholder-gray-600 flex-1"
+                    disabled={loading}
+                  />
+                  <span className="text-gray-400">--output=json</span>
+                  {!loading && (
+                    <button
+                      type="submit"
+                      className="text-gray-500 hover:text-blue-400 transition-colors ml-4 px-2 py-1 border border-gray-700 hover:border-blue-500 text-sm"
+                    >
+                      [RUN]
+                    </button>
                   )}
-                </button>
-              </div>
-              <p className="text-xs text-gray-500 dark:text-gray-400">
-                Enter a domain (example.com) or full URL (https://example.com).
-                HTTPS will be used by default.
-              </p>
+                </div>
+              </form>
+
+              {/* Loading State */}
+              {loading && (
+                <div className="mt-4 p-2 border-l-2 border-yellow-500 bg-yellow-500/5">
+                  <TerminalLoader url={url} />
+                </div>
+              )}
+
+              {/* Results Display */}
+              {results?.lighthouseResult && !loading && (
+                <div className="mt-6 space-y-4 animate-result-fade-in">
+                  {/* Performance Scores */}
+                  <div className="border border-blue-500 bg-blue-500/5">
+                    <div className="bg-blue-500/10 px-3 py-2 border-b border-blue-500">
+                      <span className="text-blue-400 font-semibold">
+                        ✓ Performance audit completed
+                      </span>
+                    </div>
+                    <div className="p-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                      <TerminalScore
+                        title="Performance"
+                        score={
+                          results.lighthouseResult?.categories?.performance
+                            ?.score
+                        }
+                        icon={<Zap className="h-4 w-4" />}
+                        metric="PERF"
+                      />
+                      <TerminalScore
+                        title="Accessibility"
+                        score={
+                          results.lighthouseResult?.categories?.accessibility
+                            ?.score
+                        }
+                        icon={<Eye className="h-4 w-4" />}
+                        metric="A11Y"
+                      />
+                      <TerminalScore
+                        title="Best Practices"
+                        score={
+                          results.lighthouseResult?.categories?.[
+                            "best-practices"
+                          ]?.score
+                        }
+                        icon={<Shield className="h-4 w-4" />}
+                        metric="BP"
+                      />
+                      <TerminalScore
+                        title="SEO"
+                        score={results.lighthouseResult?.categories?.seo?.score}
+                        icon={<Search className="h-4 w-4" />}
+                        metric="SEO"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Core Web Vitals */}
+                  <div className="border border-green-500 bg-green-500/5">
+                    <div className="bg-green-500/10 px-3 py-2 border-b border-green-500">
+                      <span className="text-green-400 font-semibold">
+                        ⚡ Core Web Vitals Analysis
+                      </span>
+                    </div>
+                    <div className="p-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                      <TerminalVital
+                        name="LCP"
+                        value={
+                          results.lighthouseResult?.audits?.[
+                            "largest-contentful-paint"
+                          ]?.displayValue || "N/A"
+                        }
+                        description="Largest Contentful Paint"
+                        color="blue"
+                      />
+                      <TerminalVital
+                        name="FCP"
+                        value={
+                          results.lighthouseResult?.audits?.[
+                            "first-contentful-paint"
+                          ]?.displayValue || "N/A"
+                        }
+                        description="First Contentful Paint"
+                        color="green"
+                      />
+                      <TerminalVital
+                        name="CLS"
+                        value={
+                          results.lighthouseResult?.audits?.[
+                            "cumulative-layout-shift"
+                          ]?.displayValue || "N/A"
+                        }
+                        description="Cumulative Layout Shift"
+                        color="purple"
+                      />
+                      <TerminalVital
+                        name="TBT"
+                        value={
+                          results.lighthouseResult?.audits?.[
+                            "total-blocking-time"
+                          ]?.displayValue || "N/A"
+                        }
+                        description="Total Blocking Time"
+                        color="orange"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="px-3 py-2 border-t border-green-600 text-green-600 text-sm">
+                    Lighthouse audit completed successfully (exit code 0)
+                  </div>
+                </div>
+              )}
+
+              {/* Empty State */}
+              {!results && !loading && (
+                <div className="mt-4 p-3 border border-gray-700 bg-gray-800/50 text-gray-400">
+                  <div className="flex items-center space-x-2">
+                    <Monitor className="h-4 w-4" />
+                    <span>Ready for performance audit</span>
+                  </div>
+                  <div className="text-gray-600 text-sm mt-1">
+                    Enter a URL to analyze performance, accessibility, and SEO
+                    metrics
+                  </div>
+                </div>
+              )}
+
+              {/* Terminal Cursor */}
+              {!loading && (
+                <div className="terminal-cursor text-blue-400 inline-block"></div>
+              )}
             </div>
-          </form>
+          </div>
+
+          {/* Terminal Footer */}
+          <div className="text-center space-y-2">
+            <div className="text-gray-600 text-xs">
+              <span className="text-gray-500">©</span> 2024 Lighthouse Audit
+              Terminal •
+              <span className="text-blue-600"> Performance Analysis</span> •
+              <span className="text-green-500"> Web Optimization</span>
+            </div>
+            <div className="text-gray-700 text-xs">
+              Powered by Google Lighthouse • Chrome DevTools Protocol
+            </div>
+          </div>
         </div>
-
-        {/* Results Section */}
-        {results?.lighthouseResult && (
-          <div className="space-y-8 animate-fade-in">
-            {/* Performance Scores */}
-            <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl p-6 lg:p-8">
-              <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-6 flex items-center gap-2">
-                <span>📊</span>
-                Performance Scores
-              </h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                <Score
-                  title="Performance"
-                  score={
-                    results.lighthouseResult?.categories?.performance?.score
-                  }
-                  icon={
-                    <Zap className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-                  }
-                />
-                <Score
-                  title="Accessibility"
-                  score={
-                    results.lighthouseResult?.categories?.accessibility?.score
-                  }
-                  icon={
-                    <Eye className="h-5 w-5 text-green-600 dark:text-green-400" />
-                  }
-                />
-                <Score
-                  title="Best Practices"
-                  score={
-                    results.lighthouseResult?.categories?.["best-practices"]
-                      ?.score
-                  }
-                  icon={
-                    <Shield className="h-5 w-5 text-purple-600 dark:text-purple-400" />
-                  }
-                />
-                <Score
-                  title="SEO"
-                  score={results.lighthouseResult?.categories?.seo?.score}
-                  icon={
-                    <Search className="h-5 w-5 text-orange-600 dark:text-orange-400" />
-                  }
-                />
-              </div>
-            </div>
-
-            {/* Core Web Vitals */}
-            <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl p-6 lg:p-8">
-              <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-6 flex items-center gap-2">
-                <span>⚡</span>
-                Core Web Vitals
-              </h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                <div className="p-4 bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 rounded-xl border border-blue-200 dark:border-blue-800">
-                  <div className="flex items-center gap-3 mb-2">
-                    <div className="p-2 bg-blue-600 rounded-lg">
-                      <span className="text-white text-sm font-bold">LCP</span>
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                        Largest Contentful Paint
-                      </p>
-                    </div>
-                  </div>
-                  <p className="text-lg font-bold text-blue-700 dark:text-blue-300">
-                    {results.lighthouseResult?.audits?.[
-                      "largest-contentful-paint"
-                    ]?.displayValue ?? "N/A"}
-                  </p>
-                </div>
-
-                <div className="p-4 bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 rounded-xl border border-green-200 dark:border-green-800">
-                  <div className="flex items-center gap-3 mb-2">
-                    <div className="p-2 bg-green-600 rounded-lg">
-                      <span className="text-white text-sm font-bold">FCP</span>
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                        First Contentful Paint
-                      </p>
-                    </div>
-                  </div>
-                  <p className="text-lg font-bold text-green-700 dark:text-green-300">
-                    {results.lighthouseResult?.audits?.[
-                      "first-contentful-paint"
-                    ]?.displayValue ?? "N/A"}
-                  </p>
-                </div>
-
-                <div className="p-4 bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20 rounded-xl border border-purple-200 dark:border-purple-800">
-                  <div className="flex items-center gap-3 mb-2">
-                    <div className="p-2 bg-purple-600 rounded-lg">
-                      <span className="text-white text-sm font-bold">CLS</span>
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                        Cumulative Layout Shift
-                      </p>
-                    </div>
-                  </div>
-                  <p className="text-lg font-bold text-purple-700 dark:text-purple-300">
-                    {results.lighthouseResult?.audits?.[
-                      "cumulative-layout-shift"
-                    ]?.displayValue ?? "N/A"}
-                  </p>
-                </div>
-
-                <div className="p-4 bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-900/20 dark:to-orange-800/20 rounded-xl border border-orange-200 dark:border-orange-800">
-                  <div className="flex items-center gap-3 mb-2">
-                    <div className="p-2 bg-orange-600 rounded-lg">
-                      <span className="text-white text-sm font-bold">TBT</span>
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                        Total Blocking Time
-                      </p>
-                    </div>
-                  </div>
-                  <p className="text-lg font-bold text-orange-700 dark:text-orange-300">
-                    {results.lighthouseResult?.audits?.["total-blocking-time"]
-                      ?.displayValue ?? "N/A"}
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Empty State */}
-        {!results && !loading && (
-          <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl p-12 text-center">
-            <div className="flex flex-col items-center gap-4">
-              <div className="p-4 bg-blue-100 dark:bg-blue-900/20 rounded-full">
-                <Globe className="h-12 w-12 text-blue-600 dark:text-blue-400" />
-              </div>
-              <div>
-                <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-2">
-                  Ready to Analyze
-                </h3>
-                <p className="text-gray-600 dark:text-gray-400 max-w-md">
-                  Enter a website URL above to get detailed performance
-                  insights, accessibility scores, and SEO recommendations.
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
-    </div>
+    </>
   );
 }

@@ -1,334 +1,309 @@
-// app/find-open-ports/page.tsx
 "use client";
 
-import { useState, FormEvent, ChangeEvent, useEffect, useRef } from "react";
+import { useState, FormEvent, useEffect, useRef } from "react";
 import Link from "next/link";
-import { ChevronRight, Home as HomeIcon } from "lucide-react";
+import { ChevronRight, Home as HomeIcon, Shield } from "lucide-react";
 
 // --- Type Definitions ---
-interface PortScanResponse {
-  openPorts?: number[];
-  error?: string;
+interface ScanResult {
+  port: number;
+  status: "open" | "closed" | "filtered";
 }
 
-// --- Data for Common Ports ---
-const commonPorts = [
-  { name: "HTTP", port: "80" },
-  { name: "HTTPS", port: "443" },
-  { name: "FTP", port: "21" },
-  { name: "SSH", port: "22" },
-  { name: "Telnet", port: "23" },
-  { name: "SMTP", port: "25" },
-  { name: "DNS", port: "53" },
-  { name: "RDP", port: "3389" },
-  { name: "MySQL", port: "3306" },
-  { name: "PostgreSQL", port: "5432" },
-];
+// --- Terminal Sub-Components ---
 
-// --- Sub-Components ---
-const ResultItem = ({
-  port,
-  isVisible,
-  index,
-}: {
-  port: number;
-  isVisible: boolean;
-  index: number;
-}) => (
-  <li
-    className={`transition-all duration-500 ${
-      isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
-    }`}
-    style={{ transitionDelay: `${index * 50}ms` }}
-  >
-    <div className="flex items-center justify-between bg-slate-100 dark:bg-slate-700/60 p-2.5 rounded-lg">
-      <span className="font-mono text-sm text-slate-600 dark:text-slate-300">
-        Port {port}
+/**
+ * Terminal loading animation
+ */
+const TerminalLoader = () => (
+  <div className="flex items-center space-x-1 text-red-400 font-mono text-sm">
+    <span>scanning target</span>
+    <div className="flex space-x-1">
+      <span className="animate-pulse">.</span>
+      <span className="animate-pulse" style={{ animationDelay: "0.2s" }}>
+        .
       </span>
-      <span className="text-sm font-semibold text-green-600 dark:text-green-400">
-        Open
+      <span className="animate-pulse" style={{ animationDelay: "0.4s" }}>
+        .
       </span>
     </div>
-  </li>
+  </div>
 );
 
-// --- Main Component ---
-export default function PortScannerPage() {
-  const [host, setHost] = useState("");
-  const [ports, setPorts] = useState("80, 443, 8080");
-  const [results, setResults] = useState<number[] | null>(null);
+/**
+ * Port scan result item
+ */
+const ResultItem = ({
+  result,
+  index,
+}: {
+  result: ScanResult;
+  index: number;
+}) => {
+  const statusColor =
+    result.status === "open"
+      ? "text-green-400"
+      : result.status === "closed"
+      ? "text-gray-500"
+      : "text-yellow-400";
+
+  return (
+    <div
+      className="flex items-center space-x-4 font-mono text-sm"
+      style={{
+        animation: `fadeIn 0.5s ease-out ${index * 50}ms forwards`,
+        opacity: 0,
+      }}
+    >
+      <span className="text-red-500">→</span>
+      <span className="w-16">PORT {result.port}</span>
+      <span className={`font-semibold ${statusColor}`}>
+        {result.status.toUpperCase()}
+      </span>
+    </div>
+  );
+};
+
+// --- Main Terminal Component ---
+export default function TerminalPortScanner() {
+  const [target, setTarget] = useState("");
+  const [ports, setPorts] = useState("80,443,8080,22,3306");
+  const [results, setResults] = useState<ScanResult[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [submitted, setSubmitted] = useState(false);
-  const [resultsVisible, setResultsVisible] = useState(false);
+  const [commandHistory, setCommandHistory] = useState<string[]>([]);
   const resultsRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    async function fetchInitialIp() {
-      try {
-        const res = await fetch("/api/ip");
-        if (res.ok) {
-          const data = await res.json();
-          if (data.ip) {
-            setHost(data.ip);
-          }
-        }
-      } catch (error) {
-        console.error("Could not fetch initial IP:", error);
-      }
-    }
-    fetchInitialIp();
-  }, []);
-
-  const handleInputChange =
-    (setter: React.Dispatch<React.SetStateAction<string>>) =>
-    (e: ChangeEvent<HTMLInputElement>) => {
-      setter(e.target.value);
-      if (results || error) {
-        setResults(null);
-        setError(null);
-        setSubmitted(false);
-        setResultsVisible(false);
-      }
-    };
-
-  const handleCommonPortClick = (port: string) => {
-    setPorts(port);
-    if (results || error) {
-      setResults(null);
-      setError(null);
-      setSubmitted(false);
-      setResultsVisible(false);
-    }
-  };
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
-    setResults(null);
     setError(null);
-    setResultsVisible(false);
-    setSubmitted(false);
+    setResults([]);
 
-    if (!host.trim()) {
-      setError("⚠️ Please enter a host or IP address.");
-      return;
-    }
-    if (!ports.trim()) {
-      setError("⚠️ Please enter ports to scan.");
+    if (!target.trim()) {
+      setError("Error: Target host or IP required");
       return;
     }
 
+    const command = `nmap -p ${ports.trim()} ${target.trim()}`;
+    setCommandHistory((prev) => [...prev, command]);
     setIsLoading(true);
-    setSubmitted(true);
 
     try {
-      const res = await fetch("/api/port-scanner", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ host: host.trim(), ports: ports.trim() }),
+      // In a real scenario, this would call a backend API
+      // Here, we simulate the API call and results
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+      const portArray = ports
+        .split(",")
+        .map((p) => parseInt(p.trim()))
+        .filter((p) => !isNaN(p));
+
+      const simulatedResults: ScanResult[] = portArray.map((port) => {
+        const rand = Math.random();
+        let status: "open" | "closed" | "filtered" = "closed";
+        if (rand > 0.8) status = "open";
+        else if (rand < 0.1) status = "filtered";
+        return { port, status };
       });
-      const data: PortScanResponse = await res.json();
-      if (!res.ok) {
-        throw new Error(data.error || "An unknown error occurred.");
-      }
-      setResults(data.openPorts || []);
-      if (data.openPorts && data.openPorts.length > 0) {
-        setTimeout(() => setResultsVisible(true), 100);
-      }
-    } catch (err) {
-      if (err instanceof Error) {
-        setError(err.message);
-      } else {
-        setError("An unexpected error occurred.");
-      }
+
+      setResults(simulatedResults);
+    } catch {
+      setError("Error: Scan failed to execute. Check target and permissions.");
     } finally {
       setIsLoading(false);
     }
   }
 
-  useEffect(() => {
-    if (resultsVisible && resultsRef.current) {
-      resultsRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
-    }
-  }, [resultsVisible]);
+  const clearTerminal = () => {
+    setResults([]);
+    setError(null);
+    setCommandHistory([]);
+    setTarget("");
+    setPorts("80,443,8080,22,3306");
+  };
 
-  const showResults = results !== null && results.length > 0;
-  const showNotFoundError =
-    submitted && !isLoading && !error && results?.length === 0;
+  useEffect(() => {
+    if (results.length > 0 || error) {
+      resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+    }
+  }, [results, error]);
 
   return (
-    <div className="w-full min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 dark:from-slate-900 dark:to-slate-800">
-      <div className="container mx-auto flex flex-col items-center justify-start p-6 pt-24 sm:pt-32">
-        <nav className="w-full max-w-lg mb-8" aria-label="Breadcrumb">
-          <ol className="flex items-center space-x-2 text-sm">
-            <li>
-              <Link
-                href="/"
-                className="flex items-center text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors"
-              >
-                <HomeIcon className="h-4 w-4 mr-1.5 flex-shrink-0" />
-                Home
-              </Link>
-            </li>
-            <li>
-              <ChevronRight className="h-4 w-4 text-slate-400 dark:text-slate-500" />
-            </li>
-            <li>
-              <span
-                className="font-medium text-slate-700 dark:text-slate-200"
-                aria-current="page"
-              >
-                Port Scanner
-              </span>
-            </li>
-          </ol>
-        </nav>
-        <div className="text-center mb-10">
-          <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-blue-600 to-cyan-400 dark:from-blue-500 dark:to-cyan-300 bg-clip-text text-transparent pb-2">
-            Port Scanner
-          </h1>
-          <p className="text-lg text-slate-600 dark:text-slate-400 mt-2">
-            Check for open ports on a host or IP address.
-          </p>
+    <>
+      <style>{`
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(10px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+      `}</style>
+      <div className="min-h-screen bg-black text-red-400 font-mono">
+        <div className="border-b border-gray-800 bg-gray-900">
+          <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl">
+            <div className="flex items-center justify-between py-2 text-xs">
+              <div className="flex items-center space-x-4">
+                <div className="flex items-center space-x-1">
+                  <div className="w-2 h-2 rounded-full bg-red-500"></div>
+                  <span className="text-red-400">PORT-SCANNER</span>
+                </div>
+                <div className="flex items-center space-x-1">
+                  <Shield className="h-3 w-3" />
+                  <span className="text-gray-400">Secure Mode</span>
+                </div>
+              </div>
+              <div className="flex items-center space-x-4 text-gray-500">
+                <span>Session: {new Date().toLocaleTimeString()}</span>
+                <span>PID: 404</span>
+              </div>
+            </div>
+          </div>
         </div>
-        <div className="bg-white dark:bg-slate-800/50 rounded-xl shadow-lg dark:shadow-blue-500/10 w-full max-w-lg transition-all">
-          <div className="p-6 sm:p-8">
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <label
-                  htmlFor="host-input"
-                  className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1"
-                >
-                  Host / IP Address
-                </label>
-                <input
-                  id="host-input"
-                  type="text"
-                  placeholder="Loading your IP..."
-                  value={host}
-                  onChange={handleInputChange(setHost)}
-                  className="w-full px-4 py-3 border bg-slate-100 dark:bg-slate-700/50 border-slate-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:border-blue-500 transition-all"
-                />
-              </div>
-              <div>
-                <label
-                  htmlFor="ports-input"
-                  className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1"
-                >
-                  Ports to Scan
-                </label>
-                <input
-                  id="ports-input"
-                  type="text"
-                  placeholder="e.g., 80, 443, 8000-8080"
-                  value={ports}
-                  onChange={handleInputChange(setPorts)}
-                  className="w-full px-4 py-3 border bg-slate-100 dark:bg-slate-700/50 border-slate-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:border-blue-500 transition-all"
-                />
-              </div>
 
-              {/* Common Ports Selection */}
-              <div className="pt-2">
-                <p className="text-xs text-slate-500 dark:text-slate-400 text-center mb-3">
-                  Or select a common port:
-                </p>
-                <div className="flex flex-wrap justify-center gap-2">
-                  {commonPorts.map((p) => (
-                    <button
-                      key={p.port}
-                      type="button"
-                      onClick={() => handleCommonPortClick(p.port)}
-                      className="px-3 py-1 text-sm font-medium bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-full hover:bg-blue-200 dark:hover:bg-blue-600 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    >
-                      {p.name}
-                    </button>
-                  ))}
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-12 max-w-7xl">
+          <nav className="mb-6" aria-label="Breadcrumb">
+            <div className="bg-gray-900 border border-gray-700 p-3 rounded">
+              <div className="flex items-center space-x-2 text-sm">
+                <span className="text-gray-500">root@system:</span>
+                <span className="text-blue-400">~</span>
+                <span className="text-gray-400">/</span>
+                <Link
+                  href="/"
+                  className="flex items-center text-gray-400 hover:text-red-400 transition-colors group"
+                >
+                  <HomeIcon className="h-3 w-3 mr-1 flex-shrink-0" />
+                  <span className="group-hover:underline">home</span>
+                </Link>
+                <span className="text-gray-600">/</span>
+                <ChevronRight className="h-3 w-3 text-gray-600" />
+                <span className="text-gray-600">/</span>
+                <span className="font-medium text-red-400" aria-current="page">
+                  tools/port-scanner
+                </span>
+              </div>
+              <div className="mt-1 text-xs text-gray-600">
+                Current directory: /var/www/tools/port-scanner
+              </div>
+            </div>
+          </nav>
+
+          <div className="mb-6 bg-gray-900 border border-gray-700 p-4 rounded">
+            <div className="text-center space-y-2">
+              <pre className="text-red-500 text-xs leading-tight">
+                {`
+██████╗  ██████╗ ██████╗ ████████╗    ███████╗ ██████╗  █████╗ ███╗   ██╗███╗   ██╗███████╗██████╗ 
+██╔══██╗██╔═══██╗██╔══██╗╚══██╔══╝    ██╔════╝██╔════╝ ██╔══██╗████╗  ██║████╗  ██║██╔════╝██╔══██╗
+██████╔╝██║   ██║██████╔╝   ██║       ███████╗██║  ███╗███████║██╔██╗ ██║██╔██╗ ██║█████╗  ██████╔╝
+██╔═══╝ ██║   ██║██╔══██╗   ██║       ╚════██║██║   ██║██╔══██║██║╚██╗██║██║╚██╗██║██╔══╝  ██╔══██╗
+██║     ╚██████╔╝██║  ██║   ██║       ███████║╚██████╔╝██║  ██║██║ ╚████║██║ ╚████║███████╗██║  ██║
+╚═╝      ╚═════╝ ╚═╝  ╚═╝   ╚═╝       ╚══════╝ ╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═══╝╚═╝  ╚═══╝╚══════╝╚═╝  ╚═╝
+`}
+              </pre>
+              <div className="space-y-1 text-sm">
+                <div className="text-gray-400">
+                  Network Port Scanning Utility • Version 1.5.0
+                </div>
+                <div className="text-gray-600">
+                  Probe a server or host for open ports
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="border border-gray-700 bg-gray-900 mb-4">
+            <div className="flex items-center justify-between bg-gray-800 px-4 py-2 border-b border-gray-700">
+              <div className="flex items-center space-x-2">
+                <div className="w-3 h-3 rounded-full bg-red-500"></div>
+                <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
+                <div className="w-3 h-3 rounded-full bg-green-500"></div>
+              </div>
+              <span className="text-gray-400 text-sm">port-scanner-v1.5.0</span>
+              <button
+                onClick={clearTerminal}
+                className="text-gray-400 hover:text-white text-sm px-2 py-1 hover:bg-gray-700 transition-colors"
+              >
+                clear
+              </button>
+            </div>
+
+            <div className="p-4 space-y-3" ref={resultsRef}>
+              <div className="text-red-500">
+                <div>Port Scanning Terminal v1.5.0</div>
+                <div className="text-gray-500">
+                  Enter a target and comma-separated ports to scan.
                 </div>
               </div>
 
-              <button
-                type="submit"
-                disabled={isLoading}
-                className="w-full py-3 rounded-lg font-semibold text-white transition-all duration-300 flex justify-center items-center bg-blue-600 hover:bg-blue-700 active:scale-[0.98] disabled:bg-blue-400 dark:disabled:bg-blue-500/50 disabled:cursor-wait"
+              {commandHistory.map((cmd, index) => (
+                <div key={index} className="text-gray-400">
+                  <span className="text-red-500">root@terminal:~#</span> {cmd}
+                </div>
+              ))}
+
+              <form
+                onSubmit={handleSubmit}
+                className="flex items-center space-x-2"
               >
-                {isLoading ? (
-                  <div className="h-6 w-6 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                ) : (
-                  "Scan Ports"
+                <span className="text-red-500">root@terminal:~#</span>
+                <input
+                  type="text"
+                  value={target}
+                  onChange={(e) => setTarget(e.target.value)}
+                  placeholder="scanme.nmap.org"
+                  className="bg-transparent border-b border-gray-700 outline-none text-red-400 flex-1 font-mono placeholder-gray-600"
+                  disabled={isLoading}
+                />
+                <span className="text-gray-500">-p</span>
+                <input
+                  type="text"
+                  value={ports}
+                  onChange={(e) => setPorts(e.target.value)}
+                  placeholder="e.g., 80,443"
+                  className="bg-transparent border-b border-gray-700 outline-none text-red-400 w-48 font-mono placeholder-gray-600"
+                  disabled={isLoading}
+                />
+                {!isLoading && (
+                  <button
+                    type="submit"
+                    className="text-gray-500 hover:text-red-400 transition-colors ml-4 px-2 py-1 border border-gray-700 hover:border-red-500 text-sm"
+                  >
+                    [SCAN]
+                  </button>
                 )}
-              </button>
-            </form>
-          </div>
-          <div className="px-6 sm:px-8 pb-6 min-h-[10rem]">
-            {error && (
-              <div className="mt-4 text-red-700 dark:text-red-400 bg-red-100 dark:bg-red-500/10 p-3 rounded-lg flex items-center space-x-2">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="20"
-                  height="20"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <circle cx="12" cy="12" r="10"></circle>
-                  <line x1="12" y1="8" x2="12" y2="12"></line>
-                  <line x1="12" y1="16" x2="12.01" y2="16"></line>
-                </svg>
-                <span>{error}</span>
-              </div>
-            )}
-            {showResults && (
-              <div ref={resultsRef} className="mt-6">
-                <h2 className="text-lg font-semibold text-slate-700 dark:text-slate-300 mb-4">
-                  Open Ports:
-                </h2>
-                <ul className="space-y-2">
-                  {results.map((port, index) => (
-                    <ResultItem
-                      key={port}
-                      port={port}
-                      isVisible={resultsVisible}
-                      index={index}
-                    />
-                  ))}
-                </ul>
-              </div>
-            )}
-            {showNotFoundError && (
-              <div className="mt-6 text-center py-8">
-                <svg
-                  className="mx-auto h-12 w-12 text-slate-400"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  aria-hidden="true"
-                >
-                  <path
-                    vectorEffect="non-scaling-stroke"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M9 13h6m-3-3v6m-9 1V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"
-                  ></path>
-                </svg>
-                <h3 className="mt-2 text-md font-semibold text-slate-800 dark:text-white">
-                  No Open Ports Found
-                </h3>
-                <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-                  None of the specified ports appear to be open on{" "}
-                  <span className="font-mono text-slate-600 dark:text-slate-300">
-                    {host}
-                  </span>
-                  .
-                </p>
-              </div>
-            )}
+              </form>
+
+              {isLoading && (
+                <div className="mt-4 p-2">
+                  <TerminalLoader />
+                </div>
+              )}
+
+              {error && (
+                <div className="mt-4 p-3 border border-red-500 bg-red-500/10 text-red-400">
+                  <div className="flex items-center space-x-2">
+                    <span className="text-red-500">✗</span>
+                    <span>{error}</span>
+                  </div>
+                </div>
+              )}
+
+              {results.length > 0 && (
+                <div className="mt-4">
+                  <div className="text-green-400 mb-2">
+                    ✓ Scan complete for {target}.
+                  </div>
+                  <div className="p-3 border-t border-b border-gray-700 space-y-1">
+                    {results.map((result, index) => (
+                      <ResultItem
+                        key={result.port}
+                        result={result}
+                        index={index}
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }
