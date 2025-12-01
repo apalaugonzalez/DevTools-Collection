@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useRef } from "react";
 import Link from "next/link";
 import {
     Home as HomeIcon,
@@ -174,13 +174,19 @@ export default function MobileTabletTester() {
     const [showDeviceModal, setShowDeviceModal] = useState(false);
     const [activeSlotIndex, setActiveSlotIndex] = useState<number | null>(null);
     const [searchQuery, setSearchQuery] = useState("");
+    const urlInputRef = useRef<HTMLInputElement>(null);
 
     // Load global URL and apply to all devices
     const handleLoadGlobalUrl = () => {
-        const normalized = normalizeUrl(globalUrl);
+        // Read directly from input ref to handle browser automation tools
+        const inputValue = urlInputRef.current?.value || globalUrl;
+        const normalized = normalizeUrl(inputValue);
         if (!normalized || !isValidUrl(normalized)) {
             return;
         }
+
+        // Update globalUrl state to stay in sync
+        setGlobalUrl(inputValue);
 
         setDevices((prev) =>
             prev.map((slot) => ({
@@ -354,6 +360,7 @@ export default function MobileTabletTester() {
                     <div className="max-w-screen-2xl mx-auto">
                         <div className="flex items-center space-x-3">
                             <input
+                                ref={urlInputRef}
                                 type="text"
                                 value={globalUrl}
                                 onChange={(e) => setGlobalUrl(e.target.value)}
@@ -367,7 +374,7 @@ export default function MobileTabletTester() {
                             >
                                 Load
                             </button>
-                            {devices.length === 1 && (
+                            {devices.length < 2 && (
                                 <button
                                     onClick={addDevice}
                                     className="p-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors"
