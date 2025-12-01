@@ -11,14 +11,10 @@ import {
   Monitor,
   Zap,
   Clock,
-  TrendingUp,
   Shield,
-  Code,
-  Database,
   Wifi,
   Activity,
   ChevronRight,
-  Sparkles,
   Terminal,
   Grid3X3,
   List,
@@ -150,17 +146,7 @@ Object.keys(toolCategories).forEach((key) => {
   ).length;
 });
 
-// Statistics for the dashboard
-const stats = [
-  { label: "Tools", value: tools.length.toString(), icon: Code },
-  {
-    label: "Categories",
-    value: Object.keys(toolCategories).length.toString(),
-    icon: Database,
-  },
-  { label: "Avg Time", value: "< 30s", icon: Activity },
-  { label: "Uptime", value: "99.9%", icon: TrendingUp },
-];
+
 
 export default function SmartDashboard() {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
@@ -210,46 +196,18 @@ export default function SmartDashboard() {
       {/* Compact Hero Section */}
       <div className="relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-r from-blue-600/10 to-purple-600/10 dark:from-blue-400/5 dark:to-purple-400/5"></div>
-        <div className="relative container mx-auto px-4 sm:px-6 lg:px-8 pt-12 pb-8">
+        <div className="relative container mx-auto px-4 sm:px-6 lg:px-8 pt-8 pb-4">
           <div className="text-center max-w-4xl mx-auto">
-            <div className="inline-flex items-center space-x-2 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm px-3 py-1.5 rounded-full border border-blue-200 dark:border-blue-800 mb-4">
-              <Sparkles className="h-3 w-3 text-blue-600 dark:text-blue-400" />
-              <span className="text-xs font-medium text-blue-700 dark:text-blue-300">
-                Professional IT Tools
-              </span>
-            </div>
-
-            <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 dark:from-blue-400 dark:via-purple-400 dark:to-indigo-400 bg-clip-text text-transparent pb-3">
+            <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 dark:from-blue-400 dark:via-purple-400 dark:to-indigo-400 bg-clip-text text-transparent">
               IT Tools Hub
             </h1>
-
-            <p className="text-lg text-slate-600 dark:text-slate-300 mb-6">
-              Professional tools for developers and IT professionals
-            </p>
-
-            {/* Compact Stats */}
-            <div className="grid grid-cols-4 gap-3 max-w-2xl mx-auto mb-6">
-              {stats.map((stat) => (
-                <div
-                  key={stat.label}
-                  className="bg-white/60 dark:bg-slate-800/60 backdrop-blur-sm rounded-lg p-3 border border-slate-200 dark:border-slate-700"
-                >
-                  <div className="text-lg font-bold text-slate-800 dark:text-white">
-                    {stat.value}
-                  </div>
-                  <div className="text-xs text-slate-600 dark:text-slate-400">
-                    {stat.label}
-                  </div>
-                </div>
-              ))}
-            </div>
           </div>
         </div>
       </div>
 
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8 pb-12">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 pb-8">
         {/* Smart Control Bar */}
-        <div className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm rounded-2xl p-4 border border-slate-200 dark:border-slate-700 mb-8 sticky top-4 z-10">
+        <div className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm rounded-2xl p-3 border border-slate-200 dark:border-slate-700 mb-6 sticky top-4 z-10">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0">
             {/* Search and Filters */}
             <div className="flex flex-1 items-center space-x-3">
@@ -260,15 +218,15 @@ export default function SmartDashboard() {
                   placeholder="Search tools..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2.5 bg-slate-100 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent transition-all"
+                  className="w-full pl-10 pr-4 py-2 bg-slate-100 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent transition-all"
                 />
               </div>
 
               <button
                 onClick={() => setShowFilters(!showFilters)}
-                className={`px-4 py-2.5 rounded-xl font-medium transition-all flex items-center space-x-2 ${selectedCategory || showFilters
-                    ? "bg-blue-600 text-white"
-                    : "bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600"
+                className={`px-4 py-2 rounded-xl font-medium transition-all flex items-center space-x-2 ${selectedCategory || showFilters
+                  ? "bg-blue-600 text-white"
+                  : "bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600"
                   }`}
               >
                 <Filter className="h-4 w-4" />
@@ -291,8 +249,8 @@ export default function SmartDashboard() {
                 <button
                   onClick={() => setViewMode("grid")}
                   className={`p-2 rounded-md transition-all ${viewMode === "grid"
-                      ? "bg-white dark:bg-slate-600 text-blue-600 dark:text-blue-400 shadow-sm"
-                      : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
+                    ? "bg-white dark:bg-slate-600 text-blue-600 dark:text-blue-400 shadow-sm"
+                    : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
                     }`}
                 >
                   <Grid3X3 className="h-4 w-4" />
@@ -300,8 +258,8 @@ export default function SmartDashboard() {
                 <button
                   onClick={() => setViewMode("list")}
                   className={`p-2 rounded-md transition-all ${viewMode === "list"
-                      ? "bg-white dark:bg-slate-600 text-blue-600 dark:text-blue-400 shadow-sm"
-                      : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
+                    ? "bg-white dark:bg-slate-600 text-blue-600 dark:text-blue-400 shadow-sm"
+                    : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
                     }`}
                 >
                   <List className="h-4 w-4" />
@@ -325,8 +283,8 @@ export default function SmartDashboard() {
                         )
                       }
                       className={`px-3 py-2 rounded-lg font-medium transition-all flex items-center space-x-2 text-sm ${selectedCategory === key
-                          ? `bg-gradient-to-r ${category.color} text-white shadow-lg`
-                          : "bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600"
+                        ? `bg-gradient-to-r ${category.color} text-white shadow-lg`
+                        : "bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600"
                         }`}
                     >
                       <IconComponent className="h-3 w-3" />
@@ -344,14 +302,14 @@ export default function SmartDashboard() {
 
         {/* Recently Used (Compact) */}
         {recentlyUsed.length > 0 && !searchQuery && !selectedCategory && (
-          <div className="mb-8">
-            <div className="flex items-center space-x-2 mb-4">
+          <div className="mb-6">
+            <div className="flex items-center space-x-2 mb-3">
               <Clock className="h-4 w-4 text-slate-600 dark:text-slate-400" />
               <h2 className="text-lg font-semibold text-slate-800 dark:text-white">
                 Recently Used
               </h2>
             </div>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
               {recentlyUsed.slice(0, 4).map((toolId) => {
                 const tool = tools.find((t) => t.id === toolId);
                 if (!tool) return null;
@@ -367,7 +325,7 @@ export default function SmartDashboard() {
                     onClick={() => handleToolClick(tool.id)}
                     className="group block"
                   >
-                    <div className="bg-white/60 dark:bg-slate-800/60 backdrop-blur-sm border border-slate-200 dark:border-slate-700 rounded-xl p-4 hover:shadow-lg transition-all group-hover:scale-[1.02]">
+                    <div className="bg-white/60 dark:bg-slate-800/60 backdrop-blur-sm border border-slate-200 dark:border-slate-700 rounded-xl p-3 hover:shadow-lg transition-all group-hover:scale-[1.02]">
                       <div className="flex items-center space-x-3">
                         <div
                           className={`p-2 rounded-lg bg-gradient-to-r ${category.color}`}
@@ -392,8 +350,8 @@ export default function SmartDashboard() {
         )}
 
         {/* Tools Display */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between mb-6">
+        <div className="mb-6">
+          <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-semibold text-slate-800 dark:text-white">
               {selectedCategory
                 ? `${toolCategories[
@@ -420,7 +378,7 @@ export default function SmartDashboard() {
               </p>
             </div>
           ) : viewMode === "grid" ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
               {filteredTools.map((tool) => {
                 const category =
                   toolCategories[tool.category as keyof typeof toolCategories];
@@ -433,7 +391,7 @@ export default function SmartDashboard() {
                     onClick={() => handleToolClick(tool.id)}
                     className="group block"
                   >
-                    <div className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm rounded-xl p-6 border border-slate-200 dark:border-slate-700 hover:shadow-xl transition-all duration-300 group-hover:scale-[1.02] h-full">
+                    <div className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm rounded-xl p-4 border border-slate-200 dark:border-slate-700 hover:shadow-xl transition-all duration-300 group-hover:scale-[1.02] h-full">
                       <div className="flex items-center justify-between mb-4">
                         <div
                           className={`p-3 rounded-xl bg-gradient-to-r ${category.color}`}
@@ -465,7 +423,7 @@ export default function SmartDashboard() {
               })}
             </div>
           ) : (
-            <div className="space-y-3">
+            <div className="space-y-2">
               {filteredTools.map((tool) => {
                 const category =
                   toolCategories[tool.category as keyof typeof toolCategories];
@@ -478,7 +436,7 @@ export default function SmartDashboard() {
                     onClick={() => handleToolClick(tool.id)}
                     className="group block"
                   >
-                    <div className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm rounded-xl p-4 border border-slate-200 dark:border-slate-700 hover:shadow-lg transition-all group-hover:scale-[1.01]">
+                    <div className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm rounded-xl p-3 border border-slate-200 dark:border-slate-700 hover:shadow-lg transition-all group-hover:scale-[1.01]">
                       <div className="flex items-center space-x-4">
                         <div
                           className={`p-3 rounded-xl bg-gradient-to-r ${category.color} flex-shrink-0`}
