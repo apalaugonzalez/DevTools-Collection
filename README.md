@@ -1,8 +1,13 @@
 # DevTools Collection
 
-A comprehensive suite of web analysis, development, and testing tools designed for developers and IT professionals. This collection provides a unified interface for essential utilities, from network diagnostics to website performance auditing.
+<div align="center">
+  <img src="public/devtools-logo.svg" alt="DevTools Collection Logo" width="120" height="120" />
+  <h3>A comprehensive suite of web analysis, development, and testing tools.</h3>
+</div>
 
-![DevTools Collection](https://placehold.co/1200x600?text=DevTools+Collection)
+This collection provides a unified interface for essential utilities, from network diagnostics to website performance auditing.
+
+![DevTools Collection](public/project-image.png)
 
 ## 🚀 Features & Tools
 
