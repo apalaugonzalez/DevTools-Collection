@@ -37,9 +37,8 @@ const TerminalResultItem = ({
   index: number;
 }) => (
   <div
-    className={`transition-all duration-500 ${
-      isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
-    }`}
+    className={`transition-all duration-500 ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
+      }`}
     style={{ transitionDelay: `${index * 100}ms` }}
   >
     <div className="group flex items-center justify-between hover:bg-gray-900/50 p-2 border-l-2 border-transparent hover:border-cyan-500 transition-all duration-200">
@@ -84,12 +83,19 @@ export default function TerminalCmsDetector() {
   // State for animations
   const [resultsVisible, setResultsVisible] = useState(false);
   const [toastMessage] = useState<string | null>(null);
+  const [cursorPos, setCursorPos] = useState(0);
 
   const resultsRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
+  const updateCursor = (e: React.SyntheticEvent<HTMLInputElement>) => {
+    const target = e.target as HTMLInputElement;
+    setCursorPos(target.selectionStart || 0);
+  };
+
   const handleUrlChange = (e: ChangeEvent<HTMLInputElement>) => {
     setUrl(e.target.value);
+    updateCursor(e);
     if (cmsInfo || error) {
       setCmsInfo(null);
       setError(null);
@@ -125,6 +131,7 @@ export default function TerminalCmsDetector() {
     setCommandHistory((prev) => [...prev, command]);
     setIsLoading(true);
     setSubmittedUrl(urlToValidate);
+    setCursorPos(0);
 
     try {
       const res = await fetch(
@@ -147,6 +154,12 @@ export default function TerminalCmsDetector() {
       }
     } finally {
       setIsLoading(false);
+      setTimeout(() => {
+        inputRef.current?.focus();
+        if (inputRef.current) {
+          setCursorPos(inputRef.current.value.length);
+        }
+      }, 0);
     }
   }
 
@@ -156,6 +169,7 @@ export default function TerminalCmsDetector() {
     setCommandHistory([]);
     setSubmittedUrl("");
     setUrl("");
+    setCursorPos(0);
     inputRef.current?.focus();
   };
 
@@ -189,8 +203,7 @@ export default function TerminalCmsDetector() {
         .animate-toast-in {
           animation: toast-in 0.5s cubic-bezier(0.21, 1.02, 0.73, 1) forwards;
         }
-        .terminal-cursor::after {
-          content: '█';
+        .animate-blink {
           animation: blink 1s infinite;
         }
         @keyframes blink {
@@ -276,51 +289,6 @@ export default function TerminalCmsDetector() {
             </div>
           </div>
 
-          {/* System Information Panels */}
-          <div className="mb-6 grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="bg-gray-900 border border-gray-700 p-3 rounded">
-              <div className="flex items-center space-x-2 mb-2">
-                <Terminal className="h-4 w-4 text-blue-400" />
-                <span className="text-blue-400 font-semibold text-sm">
-                  ENGINE
-                </span>
-              </div>
-              <div className="space-y-1 text-xs text-gray-400">
-                <div>Parser: Advanced v3.2</div>
-                <div>Signatures: 1,247</div>
-                <div>Accuracy: 94.7%</div>
-              </div>
-            </div>
-
-            <div className="bg-gray-900 border border-gray-700 p-3 rounded">
-              <div className="flex items-center space-x-2 mb-2">
-                <div className="w-4 h-4 bg-cyan-500 rounded-full animate-pulse"></div>
-                <span className="text-cyan-400 font-semibold text-sm">
-                  STATUS
-                </span>
-              </div>
-              <div className="space-y-1 text-xs text-gray-400">
-                <div>Service: Online</div>
-                <div>Queue: Empty</div>
-                <div>Response: 1.2s avg</div>
-              </div>
-            </div>
-
-            <div className="bg-gray-900 border border-gray-700 p-3 rounded">
-              <div className="flex items-center space-x-2 mb-2">
-                <div className="w-4 h-4 bg-green-500 rounded-full"></div>
-                <span className="text-green-400 font-semibold text-sm">
-                  DATABASE
-                </span>
-              </div>
-              <div className="space-y-1 text-xs text-gray-400">
-                <div>CMS Types: 156</div>
-                <div>Last Update: 2h ago</div>
-                <div>Coverage: 99.2%</div>
-              </div>
-            </div>
-          </div>
-
           {/* Command Help Panel */}
           <div className="mb-6 bg-gray-900 border border-gray-700 p-4 rounded">
             <div className="flex items-center space-x-2 mb-3">
@@ -357,7 +325,6 @@ export default function TerminalCmsDetector() {
                   <div className="text-gray-500">
                     $ detect-cms --url=&quot;shop.example.com&quot;
                   </div>
-                  <div className="text-gray-500">$ clear // Reset terminal</div>
                 </div>
               </div>
             </div>
@@ -406,15 +373,29 @@ export default function TerminalCmsDetector() {
               >
                 <span className="text-cyan-500">user@terminal:~$</span>
                 <span className="text-gray-400">detect-cms --url=&quot;</span>
-                <input
-                  ref={inputRef}
-                  type="text"
-                  value={url}
-                  onChange={handleUrlChange}
-                  placeholder="example.com"
-                  className="bg-transparent border-none outline-none text-cyan-400 flex-1 font-mono placeholder-gray-600"
-                  disabled={isLoading}
-                />
+                <div className="relative flex-1">
+                  <input
+                    ref={inputRef}
+                    type="text"
+                    value={url}
+                    onChange={handleUrlChange}
+                    onSelect={updateCursor}
+                    onKeyUp={updateCursor}
+                    onClick={updateCursor}
+                    placeholder="example.com"
+                    className="w-full bg-transparent border-none outline-none text-cyan-400 font-mono placeholder-gray-600 caret-transparent"
+                    disabled={isLoading}
+                    autoComplete="off"
+                  />
+                  {!isLoading && (
+                    <div
+                      className="absolute top-0 pointer-events-none text-cyan-400 animate-blink"
+                      style={{ left: `${cursorPos}ch` }}
+                    >
+                      █
+                    </div>
+                  )}
+                </div>
                 <span className="text-gray-400">&quot;</span>
                 {!isLoading && (
                   <button
@@ -491,10 +472,7 @@ export default function TerminalCmsDetector() {
                 </div>
               )}
 
-              {/* Terminal Cursor */}
-              {!isLoading && (
-                <div className="terminal-cursor text-cyan-400 inline-block"></div>
-              )}
+
             </div>
           </div>
 

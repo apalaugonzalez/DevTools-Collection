@@ -82,51 +82,6 @@ export default function Page() {
           </div>
         </div>
 
-        {/* System Information Panel */}
-        <div className="mb-6 grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="bg-gray-900 border border-gray-700 p-3 rounded">
-            <div className="flex items-center space-x-2 mb-2">
-              <Terminal className="h-4 w-4 text-blue-400" />
-              <span className="text-blue-400 font-semibold text-sm">
-                SYSTEM
-              </span>
-            </div>
-            <div className="space-y-1 text-xs text-gray-400">
-              <div>OS: Linux Ubuntu 22.04</div>
-              <div>Shell: bash 5.1.16</div>
-              <div>Node: v18.17.0</div>
-            </div>
-          </div>
-
-          <div className="bg-gray-900 border border-gray-700 p-3 rounded">
-            <div className="flex items-center space-x-2 mb-2">
-              <div className="w-4 h-4 bg-yellow-500 rounded-full animate-pulse"></div>
-              <span className="text-yellow-400 font-semibold text-sm">
-                STATUS
-              </span>
-            </div>
-            <div className="space-y-1 text-xs text-gray-400">
-              <div>Service: Active</div>
-              <div>Uptime: 99.9%</div>
-              <div>Load: 0.23</div>
-            </div>
-          </div>
-
-          <div className="bg-gray-900 border border-gray-700 p-3 rounded">
-            <div className="flex items-center space-x-2 mb-2">
-              <div className="w-4 h-4 bg-green-500 rounded-full"></div>
-              <span className="text-green-400 font-semibold text-sm">
-                NETWORK
-              </span>
-            </div>
-            <div className="space-y-1 text-xs text-gray-400">
-              <div>Latency: 12ms</div>
-              <div>Bandwidth: 1Gbps</div>
-              <div>SSL: Enabled</div>
-            </div>
-          </div>
-        </div>
-
         {/* Command Help Panel */}
         <div className="mb-6 bg-gray-900 border border-gray-700 p-4 rounded">
           <div className="flex items-center space-x-2 mb-3">
@@ -143,10 +98,6 @@ export default function Page() {
                   <span className="text-gray-500">
                     --url=&quot;domain.com&quot;
                   </span>
-                </div>
-                <div>
-                  <span className="text-green-400">clear</span>{" "}
-                  <span className="text-gray-500">{"// Reset terminal"}</span>
                 </div>
                 <div>
                   <span className="text-green-400">copy</span>{" "}

@@ -191,8 +191,7 @@ export default function TerminalIpChecker() {
         .animate-toast-in {
           animation: toast-in 0.5s cubic-bezier(0.21, 1.02, 0.73, 1) forwards;
         }
-        .terminal-cursor::after {
-          content: '█';
+        .animate-blink {
           animation: blink 1s infinite;
         }
         @keyframes blink {
@@ -277,51 +276,6 @@ export default function TerminalIpChecker() {
                 <div className="text-gray-600">
                   Identify your public IP address and network location
                 </div>
-              </div>
-            </div>
-          </div>
-
-          {/* System Information Panels */}
-          <div className="mb-6 grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="bg-gray-900 border border-gray-700 p-3 rounded">
-              <div className="flex items-center space-x-2 mb-2">
-                <Terminal className="h-4 w-4 text-blue-400" />
-                <span className="text-blue-400 font-semibold text-sm">
-                  RESOLVER
-                </span>
-              </div>
-              <div className="space-y-1 text-xs text-gray-400">
-                <div>Protocol: IPv4/IPv6</div>
-                <div>Method: GeoIP Lookup</div>
-                <div>Accuracy: 99.1%</div>
-              </div>
-            </div>
-
-            <div className="bg-gray-900 border border-gray-700 p-3 rounded">
-              <div className="flex items-center space-x-2 mb-2">
-                <div className="w-4 h-4 bg-orange-500 rounded-full animate-pulse"></div>
-                <span className="text-orange-400 font-semibold text-sm">
-                  STATUS
-                </span>
-              </div>
-              <div className="space-y-1 text-xs text-gray-400">
-                <div>Service: Online</div>
-                <div>Latency: 45ms</div>
-                <div>Uptime: 99.9%</div>
-              </div>
-            </div>
-
-            <div className="bg-gray-900 border border-gray-700 p-3 rounded">
-              <div className="flex items-center space-x-2 mb-2">
-                <div className="w-4 h-4 bg-green-500 rounded-full"></div>
-                <span className="text-green-400 font-semibold text-sm">
-                  NETWORK
-                </span>
-              </div>
-              <div className="space-y-1 text-xs text-gray-400">
-                <div>Interface: eth0</div>
-                <div>Gateway: Active</div>
-                <div>DNS: Resolved</div>
               </div>
             </div>
           </div>
@@ -436,10 +390,7 @@ export default function TerminalIpChecker() {
                 </div>
               )}
 
-              {/* Terminal Cursor */}
-              {!isLoading && (
-                <div className="terminal-cursor text-orange-400 inline-block"></div>
-              )}
+
             </div>
           </div>
 

@@ -32,9 +32,8 @@ const TerminalResultItem = ({
   index: number;
 }) => (
   <div
-    className={`transition-all duration-500 ${
-      isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
-    }`}
+    className={`transition-all duration-500 ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
+      }`}
     style={{ transitionDelay: `${index * 100}ms` }}
   >
     <div className="group flex items-center justify-between hover:bg-gray-900/50 p-2 border-l-2 border-transparent hover:border-green-500 transition-all duration-200">
@@ -91,8 +90,15 @@ export default function TerminalEmailFinder() {
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [resultsVisible, setResultsVisible] = useState(false);
 
+  const [cursorPos, setCursorPos] = useState(0);
+
   const resultsRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  const updateCursor = (e: React.SyntheticEvent<HTMLInputElement>) => {
+    const target = e.target as HTMLInputElement;
+    setCursorPos(target.selectionStart || 0);
+  };
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -110,6 +116,8 @@ export default function TerminalEmailFinder() {
     setCommandHistory((prev) => [...prev, command]);
     setLoading(true);
     setSubmittedUrl(url.trim());
+    // Reset cursor position on submit as input might clear or lose focus logic
+    setCursorPos(0);
 
     try {
       const res = await fetch("/api/find-emails", {
@@ -130,6 +138,16 @@ export default function TerminalEmailFinder() {
       setError(`Error: ${message}`);
     } finally {
       setLoading(false);
+      // Refocus input after loading
+      setTimeout(() => {
+        inputRef.current?.focus();
+        // We might want to restore cursor position if we kept the URL, 
+        // but here we might want to start fresh or keep it. 
+        // The URL state is preserved, so let's update cursor to end.
+        if (inputRef.current) {
+          setCursorPos(inputRef.current.value.length);
+        }
+      }, 0);
     }
   }
 
@@ -153,6 +171,7 @@ export default function TerminalEmailFinder() {
     setCommandHistory([]);
     setSubmittedUrl("");
     setUrl("");
+    setCursorPos(0);
     inputRef.current?.focus();
   };
 
@@ -186,8 +205,7 @@ export default function TerminalEmailFinder() {
         .animate-toast-in {
           animation: toast-in 0.5s cubic-bezier(0.21, 1.02, 0.73, 1) forwards;
         }
-        .terminal-cursor::after {
-          content: '█';
+        .animate-blink {
           animation: blink 1s infinite;
         }
         @keyframes blink {
@@ -243,15 +261,32 @@ export default function TerminalEmailFinder() {
               >
                 <span className="text-green-500">user@terminal:~$</span>
                 <span className="text-gray-400">find-emails --url=&quot;</span>
-                <input
-                  ref={inputRef}
-                  type="text"
-                  value={url}
-                  onChange={(e) => setUrl(e.target.value)}
-                  placeholder="example.com"
-                  className="bg-transparent border-none outline-none text-green-400 flex-1 font-mono placeholder-gray-600"
-                  disabled={loading}
-                />
+                <div className="relative flex-1">
+                  <input
+                    ref={inputRef}
+                    type="text"
+                    value={url}
+                    onChange={(e) => {
+                      setUrl(e.target.value);
+                      updateCursor(e);
+                    }}
+                    onSelect={updateCursor}
+                    onKeyUp={updateCursor}
+                    onClick={updateCursor}
+                    placeholder="example.com"
+                    className="w-full bg-transparent border-none outline-none text-green-400 font-mono placeholder-gray-600 caret-transparent"
+                    disabled={loading}
+                    autoComplete="off"
+                  />
+                  {!loading && (
+                    <div
+                      className="absolute top-0 pointer-events-none text-green-400 animate-blink"
+                      style={{ left: `${cursorPos}ch` }}
+                    >
+                      █
+                    </div>
+                  )}
+                </div>
                 <span className="text-gray-400">&quot;</span>
                 {!loading && (
                   <button
@@ -330,11 +365,6 @@ export default function TerminalEmailFinder() {
                     The target may not have publicly accessible emails
                   </div>
                 </div>
-              )}
-
-              {/* Terminal Cursor */}
-              {!loading && (
-                <div className="terminal-cursor text-green-400 inline-block"></div>
               )}
             </div>
           </div>

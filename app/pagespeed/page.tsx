@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import Link from "next/link";
 import {
   Home as HomeIcon,
@@ -56,21 +56,20 @@ const TerminalToast = ({
 }) => (
   <div className="fixed bottom-5 left-1/2 -translate-x-1/2 z-50 animate-toast-in">
     <div
-      className={`border font-mono text-sm py-2 px-4 shadow-lg flex items-center space-x-2 ${
-        flash.type === "success"
-          ? "bg-black border-green-500 text-green-400 shadow-green-500/20"
-          : flash.type === "error"
+      className={`border font-mono text-sm py-2 px-4 shadow-lg flex items-center space-x-2 ${flash.type === "success"
+        ? "bg-black border-green-500 text-green-400 shadow-green-500/20"
+        : flash.type === "error"
           ? "bg-black border-red-500 text-red-400 shadow-red-500/20"
           : "bg-black border-blue-500 text-blue-400 shadow-blue-500/20"
-      }`}
+        }`}
     >
       <span
         className={
           flash.type === "success"
             ? "text-green-500"
             : flash.type === "error"
-            ? "text-red-500"
-            : "text-blue-500"
+              ? "text-red-500"
+              : "text-blue-500"
         }
       >
         $
@@ -220,6 +219,13 @@ export default function TerminalPerformanceChecker() {
   const [loading, setLoading] = useState(false);
   const [flash, setFlash] = useState<Flash | null>(null);
   const [commandHistory, setCommandHistory] = useState<string[]>([]);
+  const [cursorPos, setCursorPos] = useState(0);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const updateCursor = (e: React.SyntheticEvent<HTMLInputElement>) => {
+    const target = e.target as HTMLInputElement;
+    setCursorPos(target.selectionStart || 0);
+  };
 
   // Helper function to normalize URL
   const normalizeUrl = (inputUrl: string): string => {
@@ -268,6 +274,7 @@ export default function TerminalPerformanceChecker() {
 
     const command = `lighthouse ${normalizedUrl} --output=json`;
     setCommandHistory((prev) => [...prev, command]);
+    setCursorPos(0);
 
     try {
       const response = await fetch(
@@ -299,6 +306,12 @@ export default function TerminalPerformanceChecker() {
 
       setTimeout(() => {
         setLoading(false);
+        setTimeout(() => {
+          inputRef.current?.focus();
+          if (inputRef.current) {
+            setCursorPos(inputRef.current.value.length);
+          }
+        }, 0);
       }, Math.max(0, remainingTime));
     }
   };
@@ -308,6 +321,8 @@ export default function TerminalPerformanceChecker() {
     setFlash(null);
     setCommandHistory([]);
     setUrl("");
+    setCursorPos(0);
+    inputRef.current?.focus();
   };
 
   return (
@@ -326,8 +341,7 @@ export default function TerminalPerformanceChecker() {
         .animate-toast-in {
           animation: toast-in 0.5s cubic-bezier(0.21, 1.02, 0.73, 1) forwards;
         }
-        .terminal-cursor::after {
-          content: '█';
+        .animate-blink {
           animation: blink 1s infinite;
         }
         @keyframes blink {
@@ -429,51 +443,6 @@ export default function TerminalPerformanceChecker() {
             </div>
           </div>
 
-          {/* System Information Panels */}
-          <div className="mb-6 grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="bg-gray-900 border border-gray-700 p-3 rounded">
-              <div className="flex items-center space-x-2 mb-2">
-                <Terminal className="h-4 w-4 text-blue-400" />
-                <span className="text-blue-400 font-semibold text-sm">
-                  LIGHTHOUSE
-                </span>
-              </div>
-              <div className="space-y-1 text-xs text-gray-400">
-                <div>Engine: Chrome DevTools</div>
-                <div>Throttling: 4G Mobile</div>
-                <div>Device: Nexus 5X</div>
-              </div>
-            </div>
-
-            <div className="bg-gray-900 border border-gray-700 p-3 rounded">
-              <div className="flex items-center space-x-2 mb-2">
-                <div className="w-4 h-4 bg-blue-500 rounded-full animate-pulse"></div>
-                <span className="text-blue-400 font-semibold text-sm">
-                  METRICS
-                </span>
-              </div>
-              <div className="space-y-1 text-xs text-gray-400">
-                <div>Performance: Core Web Vitals</div>
-                <div>Accessibility: WCAG 2.1</div>
-                <div>SEO: Best Practices</div>
-              </div>
-            </div>
-
-            <div className="bg-gray-900 border border-gray-700 p-3 rounded">
-              <div className="flex items-center space-x-2 mb-2">
-                <div className="w-4 h-4 bg-green-500 rounded-full"></div>
-                <span className="text-green-400 font-semibold text-sm">
-                  AUDIT
-                </span>
-              </div>
-              <div className="space-y-1 text-xs text-gray-400">
-                <div>Mode: Navigation</div>
-                <div>Strategy: Mobile-First</div>
-                <div>Output: JSON Report</div>
-              </div>
-            </div>
-          </div>
-
           {/* Audit Configuration Panel */}
           <div className="mb-6 bg-gray-900 border border-gray-700 p-4 rounded">
             <div className="flex items-center space-x-2 mb-3">
@@ -565,14 +534,32 @@ export default function TerminalPerformanceChecker() {
                 <div className="flex items-center space-x-2">
                   <span className="text-blue-500">user@lighthouse:~$</span>
                   <span className="text-gray-400">lighthouse</span>
-                  <input
-                    type="text"
-                    value={url}
-                    onChange={(e) => setUrl(e.target.value)}
-                    placeholder="https://example.com"
-                    className="bg-transparent border-none outline-none text-blue-400 font-mono placeholder-gray-600 flex-1"
-                    disabled={loading}
-                  />
+                  <div className="relative flex-1">
+                    <input
+                      ref={inputRef}
+                      type="text"
+                      value={url}
+                      onChange={(e) => {
+                        setUrl(e.target.value);
+                        updateCursor(e);
+                      }}
+                      onSelect={updateCursor}
+                      onKeyUp={updateCursor}
+                      onClick={updateCursor}
+                      placeholder="https://example.com"
+                      className="w-full bg-transparent border-none outline-none text-blue-400 font-mono placeholder-gray-600 caret-transparent"
+                      disabled={loading}
+                      autoComplete="off"
+                    />
+                    {!loading && (
+                      <div
+                        className="absolute top-0 pointer-events-none text-blue-400 animate-blink"
+                        style={{ left: `${cursorPos}ch` }}
+                      >
+                        █
+                      </div>
+                    )}
+                  </div>
                   <span className="text-gray-400">--output=json</span>
                   {!loading && (
                     <button
@@ -697,24 +684,8 @@ export default function TerminalPerformanceChecker() {
                 </div>
               )}
 
-              {/* Empty State */}
-              {!results && !loading && (
-                <div className="mt-4 p-3 border border-gray-700 bg-gray-800/50 text-gray-400">
-                  <div className="flex items-center space-x-2">
-                    <Monitor className="h-4 w-4" />
-                    <span>Ready for performance audit</span>
-                  </div>
-                  <div className="text-gray-600 text-sm mt-1">
-                    Enter a URL to analyze performance, accessibility, and SEO
-                    metrics
-                  </div>
-                </div>
-              )}
 
-              {/* Terminal Cursor */}
-              {!loading && (
-                <div className="terminal-cursor text-blue-400 inline-block"></div>
-              )}
+
             </div>
           </div>
 

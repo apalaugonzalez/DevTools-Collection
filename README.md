@@ -1,36 +1,118 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# DevTools Collection
 
-## Getting Started
+A comprehensive suite of web analysis, development, and testing tools designed for developers and IT professionals. This collection provides a unified interface for essential utilities, from network diagnostics to website performance auditing.
 
-First, run the development server:
+![DevTools Collection](https://placehold.co/1200x600?text=DevTools+Collection)
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+## 🚀 Features & Tools
+
+This collection includes 8 powerful tools:
+
+### 🔍 Analysis Tools
+- **Website CMS Detector**: Identify the Content Management System (WordPress, Shopify, etc.) powering any website.
+- **Website Tech Analyzer**: Deep analysis of website technologies, frameworks, and libraries (TechScan).
+- **Website Performance Audit**: Comprehensive performance, accessibility, and SEO analysis using Google Lighthouse.
+- **Mobile & Tablet Tester**: Preview and test responsive designs on various mobile and tablet devices in real-time.
+
+### 🌐 Network Tools
+- **IP Address Lookup**: Instantly discover your public IP address, ISP, and network location information.
+
+### 🛡️ Security Tools
+- **Port Scanner**: Scan and analyze open ports on any host or IP address to identify potential security vulnerabilities.
+
+### 📧 Communication Tools
+- **Email Finder by Domain**: Discover email addresses associated with any domain name.
+- **HTML Email Sender**: Compose and send beautiful HTML emails directly from your browser for testing or campaigns.
+
+## 🛠️ Tech Stack
+
+- **Framework**: [Next.js 15](https://nextjs.org/) (App Router)
+- **Styling**: [Tailwind CSS](https://tailwindcss.com/)
+- **Icons**: [Lucide React](https://lucide.dev/)
+- **Deployment**: Docker & Docker Compose
+
+## 📦 Getting Started
+
+You can run the DevTools Collection using Docker (recommended) or locally with Node.js.
+
+### Option 1: Docker (Recommended)
+
+The easiest way to deploy is using Docker Compose.
+
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/yourusername/it-tools.git
+   cd it-tools
+   ```
+
+2. **Start the application**
+   ```bash
+   docker-compose up -d
+   ```
+
+3. **Access the tools**
+   Open [http://localhost:3010](http://localhost:3010) in your browser.
+
+### Option 2: Local Development
+
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/yourusername/it-tools.git
+   cd it-tools
+   ```
+
+2. **Install dependencies**
+   ```bash
+   npm install
+   # or
+   yarn install
+   ```
+
+3. **Run the development server**
+   ```bash
+   npm run dev
+   ```
+
+4. **Access the tools**
+   Open [http://localhost:3000](http://localhost:3000) in your browser.
+
+## 🔧 Configuration
+
+The application works out-of-the-box for most tools, but some features (like sending emails and performance audits) require environment variables.
+
+### Setting up Environment Variables
+
+1. Create a file named `.env.local` in the root directory.
+2. Add the following variables to configure the services:
+
+```env
+# 📧 SMTP Configuration (Required for HTML Email Sender)
+# You can use any SMTP service like SendGrid, Mailgun, or Gmail (with App Password)
+SMTP_HOST=smtp.example.com
+SMTP_USER=your_email@example.com
+SMTP_PASS=your_smtp_password
+EMAIL_FROM=noreply@example.com
+
+# ⚡ PageSpeed Insights API (Optional but recommended for Performance Audit)
+# Get your key here: https://developers.google.com/speed/docs/insights/v5/get-started
+PAGESPEED_API_KEY=your_google_api_key
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### Docker Configuration
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- **Port**: By default, the Docker container runs on port `3010`. You can change this in `docker-compose.yml`.
+- **Environment Variables**: For Docker, you can pass these variables in your `docker-compose.yml` file or use a `.env` file referenced by Docker.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## 🤝 Contributing
 
-## Learn More
+Contributions are welcome! Please feel free to submit a Pull Request.
 
-To learn more about Next.js, take a look at the following resources:
+1. Fork the project
+2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## 📄 License
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.

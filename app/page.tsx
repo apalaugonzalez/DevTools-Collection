@@ -54,7 +54,7 @@ const toolCategories = {
 const tools = [
   {
     id: "email-finder",
-    name: "Email Finder",
+    name: "Email Finder by Domain",
     description: "Discover email addresses associated with any domain name",
     href: "/email-finder-by-domain",
     icon: Search,
@@ -75,7 +75,7 @@ const tools = [
   },
   {
     id: "cms-detector",
-    name: "CMS Detector",
+    name: "Website CMS Detector",
     description: "Identify the Content Management System powering any website",
     href: "/what-cms",
     icon: Layers,
@@ -106,7 +106,7 @@ const tools = [
   },
   {
     id: "tech-scanner",
-    name: "Tech Stack Analyzer",
+    name: "Website Tech Analyzer",
     description:
       "Deep analysis of website technologies, frameworks, and libraries",
     href: "/analyzer",
@@ -117,7 +117,7 @@ const tools = [
   },
   {
     id: "pagespeed",
-    name: "Performance Insights",
+    name: "Website Performance Audit",
     description:
       "Comprehensive website performance, accessibility, and SEO analysis",
     href: "/pagespeed",
@@ -199,7 +199,7 @@ export default function SmartDashboard() {
         <div className="relative container mx-auto px-4 sm:px-6 lg:px-8 pt-8 pb-4">
           <div className="text-center max-w-4xl mx-auto">
             <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 dark:from-blue-400 dark:via-purple-400 dark:to-indigo-400 bg-clip-text text-transparent">
-              IT Tools Hub
+              DevTools Collection
             </h1>
           </div>
         </div>

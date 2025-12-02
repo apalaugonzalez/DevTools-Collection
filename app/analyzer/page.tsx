@@ -95,21 +95,20 @@ const TerminalToast = ({
 }) => (
   <div className="fixed bottom-5 left-1/2 -translate-x-1/2 z-50 animate-toast-in">
     <div
-      className={`border font-mono text-sm py-2 px-4 shadow-lg flex items-center space-x-2 ${
-        flash.type === "success"
-          ? "bg-black border-green-500 text-green-400 shadow-green-500/20"
-          : flash.type === "error"
+      className={`border font-mono text-sm py-2 px-4 shadow-lg flex items-center space-x-2 ${flash.type === "success"
+        ? "bg-black border-green-500 text-green-400 shadow-green-500/20"
+        : flash.type === "error"
           ? "bg-black border-red-500 text-red-400 shadow-red-500/20"
           : "bg-black border-blue-500 text-blue-400 shadow-blue-500/20"
-      }`}
+        }`}
     >
       <span
         className={
           flash.type === "success"
             ? "text-green-500"
             : flash.type === "error"
-            ? "text-red-500"
-            : "text-blue-500"
+              ? "text-red-500"
+              : "text-blue-500"
         }
       >
         $
@@ -168,9 +167,8 @@ const TechResult = ({
 
   return (
     <li
-      className={`transition-all duration-500 ${
-        isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
-      }`}
+      className={`transition-all duration-500 ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
+        }`}
       style={{ transitionDelay: `${index * 100}ms` }}
     >
       <div className="border border-gray-700 bg-gray-900/50 p-3 hover:border-green-500 transition-all group">
@@ -239,19 +237,27 @@ export default function TerminalTechAnalyzer() {
   const [resultsVisible, setResultsVisible] = useState(false);
   const [flash, setFlash] = useState<Flash | null>(null);
   const [commandHistory, setCommandHistory] = useState<string[]>([]);
+  const [cursorPos, setCursorPos] = useState(0);
   const resultsRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const updateCursor = (e: React.SyntheticEvent<HTMLInputElement>) => {
+    const target = e.target as HTMLInputElement;
+    setCursorPos(target.selectionStart || 0);
+  };
 
   const handleInputChange =
     (setter: React.Dispatch<React.SetStateAction<string>>) =>
-    (e: ChangeEvent<HTMLInputElement>) => {
-      setter(e.target.value);
-      if (results || error) {
-        setResults(null);
-        setError(null);
-        setSubmitted(false);
-        setResultsVisible(false);
-      }
-    };
+      (e: ChangeEvent<HTMLInputElement>) => {
+        setter(e.target.value);
+        updateCursor(e);
+        if (results || error) {
+          setResults(null);
+          setError(null);
+          setSubmitted(false);
+          setResultsVisible(false);
+        }
+      };
 
   const handleCommonUrlClick = (urlValue: string) => {
     setUrl(urlValue);
@@ -283,6 +289,7 @@ export default function TerminalTechAnalyzer() {
 
     const command = `techscan --url ${url.trim()} --output json`;
     setCommandHistory((prev) => [...prev, command]);
+    setCursorPos(0);
 
     try {
       const response = await fetch("/api/analyze", {
@@ -328,6 +335,12 @@ export default function TerminalTechAnalyzer() {
       }
     } finally {
       setIsLoading(false);
+      setTimeout(() => {
+        inputRef.current?.focus();
+        if (inputRef.current) {
+          setCursorPos(inputRef.current.value.length);
+        }
+      }, 0);
     }
   }
 
@@ -339,6 +352,8 @@ export default function TerminalTechAnalyzer() {
     setUrl("");
     setSubmitted(false);
     setResultsVisible(false);
+    setCursorPos(0);
+    inputRef.current?.focus();
   };
 
   useEffect(() => {
@@ -367,8 +382,7 @@ export default function TerminalTechAnalyzer() {
         .animate-toast-in {
           animation: toast-in 0.5s cubic-bezier(0.21, 1.02, 0.73, 1) forwards;
         }
-        .terminal-cursor::after {
-          content: '█';
+        .animate-blink {
           animation: blink 1s infinite;
         }
         @keyframes blink {
@@ -459,51 +473,6 @@ export default function TerminalTechAnalyzer() {
             </div>
           </div>
 
-          {/* System Information Panels */}
-          <div className="mb-6 grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="bg-gray-900 border border-gray-700 p-3 rounded">
-              <div className="flex items-center space-x-2 mb-2">
-                <Code className="h-4 w-4 text-green-400" />
-                <span className="text-green-400 font-semibold text-sm">
-                  DETECTION
-                </span>
-              </div>
-              <div className="space-y-1 text-xs text-gray-400">
-                <div>Frameworks: React, Vue, Angular</div>
-                <div>CMS: WordPress, Drupal, Joomla</div>
-                <div>Libraries: jQuery, Bootstrap</div>
-              </div>
-            </div>
-
-            <div className="bg-gray-900 border border-gray-700 p-3 rounded">
-              <div className="flex items-center space-x-2 mb-2">
-                <Server className="h-4 w-4 text-blue-400" />
-                <span className="text-blue-400 font-semibold text-sm">
-                  ANALYSIS
-                </span>
-              </div>
-              <div className="space-y-1 text-xs text-gray-400">
-                <div>Headers: HTTP Response Analysis</div>
-                <div>DOM: HTML Structure Parsing</div>
-                <div>Scripts: JavaScript Detection</div>
-              </div>
-            </div>
-
-            <div className="bg-gray-900 border border-gray-700 p-3 rounded">
-              <div className="flex items-center space-x-2 mb-2">
-                <div className="w-4 h-4 bg-green-500 rounded-full animate-pulse"></div>
-                <span className="text-green-400 font-semibold text-sm">
-                  STATUS
-                </span>
-              </div>
-              <div className="space-y-1 text-xs text-gray-400">
-                <div>Engine: Wappalyzer Core</div>
-                <div>Database: 3000+ Technologies</div>
-                <div>Accuracy: 95%+ Detection Rate</div>
-              </div>
-            </div>
-          </div>
-
           {/* Scan Configuration Panel */}
           <div className="mb-6 bg-gray-900 border border-gray-700 p-4 rounded">
             <div className="flex items-center space-x-2 mb-3">
@@ -588,14 +557,29 @@ export default function TerminalTechAnalyzer() {
                 <div className="flex items-center space-x-2">
                   <span className="text-green-500">user@techscan:~$</span>
                   <span className="text-gray-400">techscan --url</span>
-                  <input
-                    type="text"
-                    value={url}
-                    onChange={handleInputChange(setUrl)}
-                    placeholder="example.com"
-                    className="bg-transparent border-none outline-none text-green-400 font-mono placeholder-gray-600 flex-1"
-                    disabled={isLoading}
-                  />
+                  <div className="relative flex-1">
+                    <input
+                      ref={inputRef}
+                      type="text"
+                      value={url}
+                      onChange={handleInputChange(setUrl)}
+                      onSelect={updateCursor}
+                      onKeyUp={updateCursor}
+                      onClick={updateCursor}
+                      placeholder="example.com"
+                      className="w-full bg-transparent border-none outline-none text-green-400 font-mono placeholder-gray-600 caret-transparent"
+                      disabled={isLoading}
+                      autoComplete="off"
+                    />
+                    {!isLoading && (
+                      <div
+                        className="absolute top-0 pointer-events-none text-green-400 animate-blink"
+                        style={{ left: `${cursorPos}ch` }}
+                      >
+                        █
+                      </div>
+                    )}
+                  </div>
                   <span className="text-gray-400">--output json</span>
                   {!isLoading && (
                     <button
@@ -678,23 +662,10 @@ export default function TerminalTechAnalyzer() {
                 </div>
               )}
 
-              {/* Empty State */}
-              {!results && !isLoading && !error && (
-                <div className="mt-4 p-3 border border-gray-700 bg-gray-800/50 text-gray-400">
-                  <div className="flex items-center space-x-2">
-                    <Terminal className="h-4 w-4" />
-                    <span>Ready for technology detection</span>
-                  </div>
-                  <div className="text-gray-600 text-sm mt-1">
-                    Enter a URL to analyze website technologies and frameworks
-                  </div>
-                </div>
-              )}
+              {/* Empty State removed for cleaner terminal interface */}
 
-              {/* Terminal Cursor */}
-              {!isLoading && (
-                <div className="terminal-cursor text-green-400 inline-block"></div>
-              )}
+
+
             </div>
           </div>
 
