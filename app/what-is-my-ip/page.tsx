@@ -2,7 +2,11 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { ChevronRight, Home as HomeIcon, Terminal, Globe } from "lucide-react";
+import {
+  ChevronRight,
+  Home as HomeIcon,
+  Globe,
+} from "lucide-react";
 
 // --- Type Definitions ---
 interface IpInfo {

@@ -9,9 +9,7 @@ import {
   Eye,
   Shield,
   Search,
-  Terminal,
   Activity,
-  Monitor,
 } from "lucide-react";
 
 // Define a more robust type for the results. All properties are optional

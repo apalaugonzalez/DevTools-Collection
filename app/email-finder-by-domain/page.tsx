@@ -1,7 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { Home as HomeIcon, ChevronRight, Terminal, Wifi } from "lucide-react";
+import {
+  Wifi,
+  Home as HomeIcon,
+  ChevronRight,
+} from "lucide-react";
 import EmailFinderClient from "./EmailFinderClient";
 
 export default function Page() {

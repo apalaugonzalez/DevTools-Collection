@@ -5,11 +5,8 @@ import Link from "next/link";
 import {
   ChevronRight,
   Home as HomeIcon,
-  Terminal,
   Search,
-  Code,
   Database,
-  Server,
 } from "lucide-react";
 
 // --- Type Definitions ---

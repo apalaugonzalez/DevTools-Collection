@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import {
     Home as HomeIcon,
@@ -16,6 +16,8 @@ import {
     Settings,
     Plus,
     Trash2,
+    Bookmark,
+    Globe,
 } from "lucide-react";
 
 // --- Type Definitions ---
@@ -38,6 +40,13 @@ interface DeviceSlot {
     isLoading: boolean;
     error: string | null;
     iframeKey: number;
+}
+
+interface SavedUrl {
+    id: string;
+    name: string;
+    url: string;
+    createdAt: number;
 }
 
 // --- Device Presets Data (same as before) ---
@@ -174,7 +183,22 @@ export default function MobileTabletTester() {
     const [showDeviceModal, setShowDeviceModal] = useState(false);
     const [activeSlotIndex, setActiveSlotIndex] = useState<number | null>(null);
     const [searchQuery, setSearchQuery] = useState("");
+    const [savedUrls, setSavedUrls] = useState<SavedUrl[]>([]);
+    const [showBookmarksDrawer, setShowBookmarksDrawer] = useState(false);
+    const [bookmarkSearchQuery, setBookmarkSearchQuery] = useState("");
     const urlInputRef = useRef<HTMLInputElement>(null);
+
+    // Load saved URLs on mount
+    useEffect(() => {
+        const saved = localStorage.getItem("mobileTesterSavedUrls");
+        if (saved) {
+            try {
+                setSavedUrls(JSON.parse(saved));
+            } catch (error) {
+                console.error('Failed to load saved URLs:', error);
+            }
+        }
+    }, []);
 
     // Load global URL and apply to all devices
     const handleLoadGlobalUrl = () => {
@@ -198,13 +222,69 @@ export default function MobileTabletTester() {
         );
     };
 
+    // Save URL function
+    const handleSaveUrl = (customName?: string) => {
+        const normalized = normalizeUrl(globalUrl);
+        if (!normalized) return;
+        
+        const exists = savedUrls.some(saved => saved.url === normalized);
+        if (exists) return;
+        
+        const newSavedUrl: SavedUrl = {
+            id: Date.now().toString(),
+            name: customName || new URL(normalized).hostname,
+            url: normalized,
+            createdAt: Date.now()
+        };
+        
+        const updated = [newSavedUrl, ...savedUrls].slice(0, 10);
+        setSavedUrls(updated);
+        localStorage.setItem("mobileTesterSavedUrls", JSON.stringify(updated));
+    };
+
+    // Remove URL function
+    const handleRemoveUrl = (id: string) => {
+        const updated = savedUrls.filter(saved => saved.id !== id);
+        setSavedUrls(updated);
+        localStorage.setItem("mobileTesterSavedUrls", JSON.stringify(updated));
+    };
+
+    // Load saved URL function
+    const handleLoadSavedUrl = (url: string) => {
+        setGlobalUrl(url);
+        if (urlInputRef.current) {
+            urlInputRef.current.value = url;
+        }
+        handleLoadGlobalUrl();
+    };
+
+    // Common development ports
+    const commonPorts = [
+        { name: 'Local:3000', url: 'localhost:3000' },
+        { name: 'Local:8080', url: 'localhost:8080' },
+        { name: 'Local:8000', url: 'localhost:8000' },
+        { name: 'Local:5000', url: 'localhost:5000' }
+    ];
+
+    // Filter saved URLs based on search query
+    const filteredSavedUrls = savedUrls.filter(saved => 
+        saved.name.toLowerCase().includes(bookmarkSearchQuery.toLowerCase()) ||
+        saved.url.toLowerCase().includes(bookmarkSearchQuery.toLowerCase())
+    );
+
     const normalizeUrl = (inputUrl: string): string => {
         const trimmed = inputUrl.trim();
         if (!trimmed) return "";
         if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) {
             return trimmed;
         }
-        return `https://${trimmed}`;
+        
+        // Detect local development addresses and use HTTP
+        const isLocalhost = trimmed.includes('localhost') || 
+                           trimmed.includes('127.0.0.1') || 
+                           /^(\d{1,3}\.){3}\d{1,3}(:\d+)?/.test(trimmed);
+        
+        return isLocalhost ? `http://${trimmed}` : `https://${trimmed}`;
     };
 
     const isValidUrl = (urlString: string): boolean => {
@@ -212,6 +292,12 @@ export default function MobileTabletTester() {
             new URL(urlString);
             return true;
         } catch {
+            // For local development, be more permissive
+            if (urlString.includes('localhost') || 
+                urlString.includes('127.0.0.1') || 
+                /^(\d{1,3}\.){3}\d{1,3}/.test(urlString)) {
+                return urlString.match(/^https?:\/\/[^\s/$.?#].[^\s]*$/) !== null;
+            }
             return false;
         }
     };
@@ -357,7 +443,8 @@ export default function MobileTabletTester() {
             {/* Settings Panel - Slide from top */}
             {showSettings && (
                 <div className="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 px-4 py-3 shadow-lg animate-slideDown">
-                    <div className="max-w-screen-2xl mx-auto">
+                    <div className="max-w-screen-2xl mx-auto space-y-3">
+                        {/* URL Input Section */}
                         <div className="flex items-center space-x-3">
                             <input
                                 ref={urlInputRef}
@@ -365,7 +452,7 @@ export default function MobileTabletTester() {
                                 value={globalUrl}
                                 onChange={(e) => setGlobalUrl(e.target.value)}
                                 onKeyDown={(e) => e.key === "Enter" && handleLoadGlobalUrl()}
-                                placeholder="Enter URL (e.g., example.com)"
+                                placeholder="Enter URL (e.g., example.com or 192.168.1.224:3000)"
                                 className="flex-1 px-4 py-2 bg-slate-100 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                             />
                             <button
@@ -373,6 +460,24 @@ export default function MobileTabletTester() {
                                 className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors"
                             >
                                 Load
+                            </button>
+                            {globalUrl && normalizeUrl(globalUrl) && (
+                                <button
+                                    onClick={() => handleSaveUrl()}
+                                    className="p-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors"
+                                    aria-label="Save URL"
+                                    title="Save current URL"
+                                >
+                                    <Bookmark className="h-5 w-5" />
+                                </button>
+                            )}
+                            <button
+                                onClick={() => setShowBookmarksDrawer(true)}
+                                className="p-2 bg-slate-600 hover:bg-slate-700 text-white rounded-lg transition-colors"
+                                aria-label="Bookmarks"
+                                title="Manage bookmarks"
+                            >
+                                <Bookmark className="h-5 w-5" />
                             </button>
                             {devices.length < 2 && (
                                 <button
@@ -384,6 +489,22 @@ export default function MobileTabletTester() {
                                 </button>
                             )}
                         </div>
+
+                        {/* Quick Access Buttons */}
+                        <div className="flex items-center space-x-2">
+                            <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">Quick:</span>
+                            {commonPorts.map((port) => (
+                                <button
+                                    key={port.url}
+                                    onClick={() => handleLoadSavedUrl(port.url)}
+                                    className="px-2 py-1 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-300 rounded text-xs font-medium transition-colors"
+                                >
+                                    {port.name}
+                                </button>
+                            ))}
+                        </div>
+
+                        
                     </div>
                 </div>
             )}
@@ -582,6 +703,160 @@ export default function MobileTabletTester() {
                 </div>
             )}
 
+            {/* Bookmark Drawer */}
+            {showBookmarksDrawer && (
+                <>
+                    {/* Backdrop */}
+                    <div 
+                        className="fixed inset-0 bg-black/50 z-40 md:bg-black/30"
+                        onClick={() => setShowBookmarksDrawer(false)}
+                    />
+                    
+                    {/* Drawer - Responsive positioning */}
+                    <div className="fixed bottom-0 left-0 right-auto top-auto w-full h-[80vh] bg-white dark:bg-slate-800 shadow-2xl z-50 transform transition-transform duration-300 ease-out animate-slideInUp md:bottom-auto md:left-auto md:right-0 md:top-0 md:h-full md:w-96 md:max-w-[85vw] md:animate-slideInRight">
+                        
+                        {/* Mobile Handle Bar */}
+                        <div className="md:hidden h-1 w-12 bg-slate-300 dark:bg-slate-600 rounded-full mx-auto mt-2 mb-4"></div>
+                        
+                        {/* Drawer Header */}
+                        <div className="flex items-center justify-between p-4 border-b border-slate-200 dark:border-slate-700">
+                            <h3 className="text-lg font-semibold text-slate-900 dark:text-white flex items-center">
+                                <Bookmark className="h-5 w-5 mr-2" />
+                                Bookmarks & Quick Access
+                            </h3>
+                            <button
+                                onClick={() => setShowBookmarksDrawer(false)}
+                                className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
+                                aria-label="Close bookmarks"
+                            >
+                                <X className="h-5 w-5" />
+                            </button>
+                        </div>
+
+                        {/* Search Bar */}
+                        <div className="p-4 border-b border-slate-200 dark:border-slate-700">
+                            <div className="relative">
+                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                                <input
+                                    type="text"
+                                    value={bookmarkSearchQuery}
+                                    onChange={(e) => setBookmarkSearchQuery(e.target.value)}
+                                    placeholder="Search bookmarks..."
+                                    className="w-full pl-10 pr-10 py-2 bg-slate-100 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                                    autoFocus
+                                />
+                                {bookmarkSearchQuery && (
+                                    <button
+                                        onClick={() => setBookmarkSearchQuery("")}
+                                        className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
+                                    >
+                                        <X className="h-3 w-3" />
+                                    </button>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Content Area */}
+                        <div className="flex-1 overflow-y-auto p-4 space-y-6">
+                            {/* Quick Access Section */}
+                            <div className="space-y-3">
+                                <div className="flex items-center justify-between">
+                                    <h4 className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+                                        Quick Access
+                                    </h4>
+                                </div>
+                                <div className="grid grid-cols-2 gap-2">
+                                    {commonPorts.map((port) => (
+                                        <button
+                                            key={port.url}
+                                            onClick={() => {
+                                                handleLoadSavedUrl(port.url);
+                                                setShowBookmarksDrawer(false);
+                                            }}
+                                            className="flex items-center justify-center p-3 bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-lg border border-blue-200 dark:border-blue-800 transition-colors"
+                                        >
+                                            <span className="text-sm font-medium">{port.name}</span>
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Saved URLs Section */}
+                            {savedUrls.length > 0 && (
+                                <div className="space-y-3">
+                                    <div className="flex items-center justify-between">
+                                        <h4 className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+                                            Saved URLs ({filteredSavedUrls.length})
+                                        </h4>
+                                        {bookmarkSearchQuery && (
+                                            <span className="text-xs text-slate-500 dark:text-slate-400">
+                                                {filteredSavedUrls.length} found
+                                            </span>
+                                        )}
+                                    </div>
+                                    
+                                    {filteredSavedUrls.length > 0 ? (
+                                        <div className="space-y-2">
+                                            {filteredSavedUrls.map((saved) => (
+                                                <div
+                                                    key={saved.id}
+                                                    className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-700/50 rounded-lg border border-slate-200 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-700/70 transition-colors group"
+                                                >
+                                                    <button
+                                                        onClick={() => {
+                                                            handleLoadSavedUrl(saved.url);
+                                                            setShowBookmarksDrawer(false);
+                                                        }}
+                                                        className="flex items-center space-x-3 flex-1 min-w-0 text-left"
+                                                    >
+                                                        <Globe className="h-4 w-4 text-slate-400 flex-shrink-0" />
+                                                        <div className="min-w-0 flex-1">
+                                                            <div className="text-sm font-medium text-slate-900 dark:text-white truncate">
+                                                                {saved.name}
+                                                            </div>
+                                                            <div className="text-xs text-slate-500 dark:text-slate-400 truncate">
+                                                                {saved.url}
+                                                            </div>
+                                                        </div>
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handleRemoveUrl(saved.id)}
+                                                        className="p-2 text-slate-400 hover:text-red-600 dark:hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100"
+                                                        aria-label="Remove saved URL"
+                                                    >
+                                                        <Trash2 className="h-4 w-4" />
+                                                    </button>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <div className="text-center py-8">
+                                            <Search className="h-12 w-12 text-slate-300 dark:text-slate-600 mx-auto mb-3" />
+                                            <p className="text-sm text-slate-500 dark:text-slate-400">
+                                                No bookmarks found matching &quot;{bookmarkSearchQuery}&quot;
+                                            </p>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+
+                            {/* Empty State */}
+                            {savedUrls.length === 0 && (
+                                <div className="text-center py-8">
+                                    <Bookmark className="h-12 w-12 text-slate-300 dark:text-slate-600 mx-auto mb-3" />
+                                    <p className="text-sm text-slate-500 dark:text-slate-400 mb-2">
+                                        No saved URLs yet
+                                    </p>
+                                    <p className="text-xs text-slate-400 dark:text-slate-500">
+                                        Save URLs by clicking the bookmark icon in the settings panel
+                                    </p>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </>
+            )}
+
             <style jsx>{`
         @keyframes slideDown {
           from {
@@ -593,8 +868,44 @@ export default function MobileTabletTester() {
             opacity: 1;
           }
         }
+        
+        @keyframes slideInRight {
+          from {
+            transform: translateX(100%);
+          }
+          to {
+            transform: translateX(0);
+          }
+        }
+        
+        @keyframes slideInUp {
+          from {
+            transform: translateY(100%);
+          }
+          to {
+            transform: translateY(0);
+          }
+        }
+        
         .animate-slideDown {
           animation: slideDown 0.3s ease-out;
+        }
+        
+        .animate-slideInRight {
+          animation: slideInRight 0.3s ease-out;
+        }
+        
+        .animate-slideInUp {
+          animation: slideInUp 0.3s ease-out;
+        }
+        
+        /* For mobile bottom sheet, we'll use transform classes directly */
+        .drawer-right {
+          transform: translateX(0);
+        }
+        
+        .drawer-bottom {
+          transform: translateY(0);
         }
       `}</style>
         </div>

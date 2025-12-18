@@ -2,7 +2,11 @@
 
 import { useState, FormEvent, ChangeEvent, useEffect, useRef } from "react";
 import Link from "next/link";
-import { ChevronRight, Home as HomeIcon, Terminal, Search } from "lucide-react";
+import {
+  Search,
+  Home as HomeIcon,
+  ChevronRight,
+} from "lucide-react";
 
 // --- Type Definitions ---
 interface CmsDetectionResponse {
